@@ -6,10 +6,12 @@ from lib.multiplier import *
 
 def main():
      
-    a = input("insert base")
-    b = input("insert power")
-    n = input("insert modulus")
+    a = input("insert base: ")
+    b = input("insert power: ")
+    n = input("insert modulus: ")
 
     modexp:ModulusExponential = BinaryMethod(ModulusMultiplier())
-    print(modexp(n, BitVector.fromint(a), BitVector.fromint(b) ))
+    print(modexp(n, BitVector.fromint(int(a)), BitVector.fromint(int(b)) ))
 
+if __name__ == "__main__":
+    main()
