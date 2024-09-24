@@ -2,18 +2,22 @@ from typing import Self
 
 class BitVector:
     
-    def __init__(self, len:int, int_value:int, bit_string:str) -> None:
-        self.__len = len
-        self.__int_value = int_value
-        self.__bit_string = bit_string
-
+    def __init__(self,int_value:int, bit_string:str) -> None:
+        self.__int_value:int = int_value
+        self.__bit_string:str = bit_string
+        self.__len = len(bit_string)
+    
     @classmethod
-    def fromint(cls, value: int):
-        return cls(len=len(format(value, 'b' )), int_value=value, bit_string=format(value, 'b' )) 
+    def fromint(cls, value: int, len:int = None):
+        
+        if len is None:
+            return cls(int_value=value, bit_string=format(value, 'b' )) 
+        else:    
+            return cls(int_value=value, bit_string=format(value, '0' + str(len) + 'b' )) 
     
     @classmethod
     def fromstr(cls, value: str):
-        return cls(len=len(value), int_value=int(value, 2), bit_string=value) 
+        return cls(int_value=int(value, 2), bit_string=value) 
     
        
     def __or__(self, value: Self) -> Self: 
@@ -28,9 +32,10 @@ class BitVector:
         return BitVector.fromstr(''.join('1' if char == '0' else '0' for char in self.__bit_string))
 
     def __add__(self, value: Self) -> Self:
-        return BitVector.fromint(self.__int_value + value.__int_value)        
+        return BitVector.fromint(self.__int_value + value.__int_value, max(len(self), len(value)))        
     def __sub__(self, value:Self) -> Self:
-        return BitVector.fromint(self.__int_value - value.__int_value)
+        return BitVector.fromint(self.__int_value - value.__int_value, max(len(self), len(value)))
+    
     def __eq__(self, value:Self) -> bool:
         return self.__int_value == value.__int_value
 
@@ -38,6 +43,11 @@ class BitVector:
         return self.__int_value > value.__int_value
     def __lt__(self, value:Self) -> bool:   
         return self.__int_value < value.__int_value
+    def __ge__(self, value:Self) -> bool:
+        return self > value | self == value
+
+    def __le__(self, value:Self) -> bool:
+        return self < value | self == value
 
     def __getitem__(self, key:int):
         return bool(int(self.__bit_string[self.__len - key-1]))
@@ -48,4 +58,10 @@ class BitVector:
 
     def __len__(self):
         return self.__len
+    
+    def __lshift__(self, n:int):
+        return BitVector.fromint(self.__int_value << n, self.__len)
+    
+    def __rshift__(self, n:int):
+        return BitVector.fromint(self.__int_value >> n, self.__len)
 
