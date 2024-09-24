@@ -34,6 +34,11 @@ class BitVector:
     def __eq__(self, value:Self) -> bool:
         return self.__int_value == value.__int_value
 
+    def __gt__(self, value:Self) -> bool:   
+        return self.__int_value > value.__int_value
+    def __lt__(self, value:Self) -> bool:   
+        return self.__int_value < value.__int_value
+
     def __getitem__(self, key:int):
         return bool(int(self.__bit_string[self.__len - key-1]))
 
