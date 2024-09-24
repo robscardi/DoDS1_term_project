@@ -11,7 +11,7 @@ def main():
     n = input("insert modulus: ")
 
     modexp:ModulusExponential = BinaryMethod(ModulusMultiplier())
-    print(modexp(n, BitVector.fromint(int(a)), BitVector.fromint(int(b)) ))
+    print(modexp(int(n), BitVector.fromint(int(a)), BitVector.fromint(int(b)) ))
 
 if __name__ == "__main__":
     main()
