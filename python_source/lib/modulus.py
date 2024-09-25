@@ -1,8 +1,20 @@
+from typing import Any
 from lib.utils import BitVector
 from lib.adders import *
+from numpy import mod as npmod
+
+class Modulus:
+	def __call__(self, a:BitVector, n:int) -> Any:
+		return BitVector.fromint(npmod(a.__int_value,  n),  len(a))
+
+class EuclidianModulus(Modulus):
+
+	def __call__(self, a:BitVector, n:int) -> BitVector:
+		return __mod__(a, BitVector.fromint(n, len(a)))
+
 
 # Function to compute the rest of Euclidian division (used on small numbers)
-def mod(a : BitVector,k):
+def __mod__(a : BitVector, k:BitVector):
 	r = a
 	while r > k:
 		r -= k
@@ -10,10 +22,10 @@ def mod(a : BitVector,k):
 
 # Function to return the value of (bin % k) 
 def getMod(bin, k): 
-    n = len(bin)
+	n = len(bin)
 	
 	# pwrTwo[i] will store ((2^i) % k) 
-    pwrTwo = [0] * n
+	pwrTwo = [0] * n
 	pwrTwo[0] = mod(1,k) 
 	r = mod(2,k)
 	for i in range(1, n): 
@@ -36,13 +48,5 @@ def getMod(bin, k):
 		j -= 1
 
 	return res 
-
-# Driver code 
-bin = "1101"
-n = len(bin) 
-k = 45
-
-print(getMod(bin, n, k)) 
-
 # This code is contributed by
 # divyamohan123

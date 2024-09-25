@@ -1,6 +1,6 @@
 
-from lib.utils import BitVector
-from lib.modulus_multiplier import ModulusMultiplier
+from .utils import BitVector
+from .modulus_multiplier import ModulusMultiplier
 import numpy as np
 
 class ModulusExponential:
@@ -14,7 +14,22 @@ class BinaryMethod(ModulusExponential):
         super().__init__()
         self.modMult = modMult
 
-    def __call__(self, M:BitVector, e:BitVector, n:int) -> BitVector:
+    def __call__(self, n:int,M:BitVector, e:BitVector) -> BitVector:
+
         
-        pass
+        print(e.__len__())
+        if e.__getitem__(e.__len__() - 1) == 1:
+            z = M.__value__()
+            C = BitVector.fromint(z)
+        else:
+            C = BitVector.fromint(1)
+        print(C.__strvalue__())
+        for i in reversed(range(e.__len__()-1)):
+            C = self.modMult(n, C,C)
+            if e.__getitem__(i) == 1:
+                C =  self.modMult(n,C,M)
+        print("cripyted C: \n")
+        print(C.__strvalue__())
+        print(C.__value__())
+        return C
          

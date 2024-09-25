@@ -2,14 +2,18 @@ from typing import Self
 
 class BitVector:
     
-    def __init__(self, len:int, int_value:int, bit_string:str) -> None:
-        self.__len = len
+    def __init__(self, int_value:int, bit_string:str) -> None:
+        
         self.__int_value = int_value
         self.__bit_string = bit_string
+        self.__len = len(bit_string)
 
     @classmethod
-    def fromint(cls, value: int):
-        return cls(len=len(format(value, 'b' )), int_value=value, bit_string=format(value, 'b' )) 
+    def fromint(cls, value: int, len:int = None):
+        if len is None:
+            return cls(int_value=value, bit_string=format(value, 'b' )) 
+        else:    
+            return cls(int_value=value, bit_string=format(value, '0' + str(len) + 'b' )) 
     
     @classmethod
     def fromstr(cls, value: str):
@@ -48,4 +52,12 @@ class BitVector:
 
     def __len__(self):
         return self.__len
-
+    def __value__(self):
+        return self.__int_value
+    def __strvalue__(self):
+        return self.__bit_string
+    def __lshift__(self, n:int):
+        return BitVector.fromint(self.__int_value << n, self.__len)
+    
+    def __rshift__(self, n:int):
+        return BitVector.fromint(self.__int_value >> n, self.__len)

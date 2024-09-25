@@ -1,5 +1,5 @@
 from typing import Any
-from lib.utils import BitVector
+from .utils import BitVector
 
 
 #returns a tuple in the form (S, C)

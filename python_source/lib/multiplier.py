@@ -1,5 +1,5 @@
-from lib.utils import BitVector
-from lib.adders import *
+from .utils import BitVector
+from .adders import *
 import numpy as np
 from functools import reduce
 

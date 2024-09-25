@@ -2,14 +2,17 @@ from lib.modulus_exponential import *
 from lib.utils import BitVector
 from lib.modulus_multiplier import *
 from lib.multiplier import *
+from lib.modulus import *
 
 
 def main():
      
-    a = input("insert base")
-    b = input("insert power")
-    n = input("insert modulus")
+    a = int(input("insert base\n"))
+    b = int(input("insert power\n"))
+    n = int(input("insert modulus\n"))
 
-    modexp:ModulusExponential = BinaryMethod(ModulusMultiplier())
+    modexp:ModulusExponential = BinaryMethod(BlakleyMethod(EuclidianModulus()))
     print(modexp(n, BitVector.fromint(a), BitVector.fromint(b) ))
 
+if __name__ == "__main__":
+    main()
