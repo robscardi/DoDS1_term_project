@@ -16,7 +16,7 @@ class BlakleyMethod(ModulusMultiplier):
         self.mod = mod
 
     def __call__(self, n:int, a:BitVector, b:BitVector ):
-        assert(len(a) == len(b))
+        assert len(a) == len(b), "The two inputs should have the same bit length" 
         res = BitVector.fromint(0, len(a))
         for i in range(0, len(a)):
             addendum = BitVector.fromstr("0"*len(a)) if a[len(a) -i -1] == 0 else b

@@ -15,21 +15,15 @@ class BinaryMethod(ModulusExponential):
         self.modMult = modMult
 
     def __call__(self, n:int,M:BitVector, e:BitVector) -> BitVector:
-
         
-        print(e.__len__())
         if e.__getitem__(e.__len__() - 1) == 1:
             z = M.__value__()
             C = BitVector.fromint(z, len(M))
         else:
             C = BitVector.fromint(1, len(M))
-        print(C.__strvalue__())
         for i in reversed(range(e.__len__()-1)):
             C = self.modMult(n, C,C)
             if e.__getitem__(i) == 1:
                 C =  self.modMult(n,C,M)
-        print("cripyted C: \n")
-        print(C.__strvalue__())
-        print(C.__value__())
         return C
          

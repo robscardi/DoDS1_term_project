@@ -8,6 +8,7 @@ class BitVector:
         self.__len = len(bit_string)
     
     @classmethod
+    # Construct a BitVector given the integer value and the bit length. If len is None then the smallest bit length is chosen
     def fromint(cls, value: int, len:int = None):
         
         if len is None:
@@ -16,6 +17,7 @@ class BitVector:
             return cls(int_value=value, bit_string=format(value, '0' + str(len) + 'b' )) 
     
     @classmethod
+    # Construct a BitVector starting from a binary string 
     def fromstr(cls, value: str):
         return cls(int_value=int(value, 2), bit_string=value) 
     
@@ -58,9 +60,9 @@ class BitVector:
 
     def __len__(self):
         return self.__len
-    def __value__(self):
+    def get_value(self):
         return self.__int_value
-    def __strvalue__(self):
+    def get_str(self):
         return self.__bit_string
     
     def __lshift__(self, n:int):

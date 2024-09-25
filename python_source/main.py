@@ -7,12 +7,18 @@ from lib.modulus import *
 
 def main():
      
-    a = int(input("insert base\n"))
-    b = int(input("insert power\n"))
     n = int(input("insert modulus\n"))
-
+    a = int(input("insert base\n"))
+    assert a < n, "a needs to be strictly less than n (Blakley implementation)"
+    b = int(input("insert power\n"))
+    assert b < n, "b needs to be strictly less than n (Blakley implementation)"
+    
     modexp:ModulusExponential = BinaryMethod(BlakleyMethod(EuclidianModulus()))
-    print(modexp(n, BitVector.fromint(a, 32), BitVector.fromint(b, 32) ))
+    #a, b and n should be representable with 256 bit. for bigger values modify the bit vector lenght inside the
+    #BitVector.fromint function
+    bitlen = 256
+    print(modexp(n, BitVector.fromint(a, bitlen), BitVector.fromint(b, bitlen) ).__value__())
+    print(modexp(n, BitVector.fromint(a, bitlen), BitVector.fromint(b, bitlen) ).__strvalue__())
 
 if __name__ == "__main__":
     main()
