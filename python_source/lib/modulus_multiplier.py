@@ -9,6 +9,7 @@ class ModulusMultiplier:
     def __call__(self, n:int, a:BitVector, b:BitVector) -> BitVector:
         return BitVector.fromint(np.mod(a.__value__()*b.__value__(), n))
 
+
 class BlakleyMethod(ModulusMultiplier):
     def __init__(self, mod:Modulus) -> None:
         super().__init__()

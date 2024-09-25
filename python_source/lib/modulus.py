@@ -48,5 +48,6 @@ def getMod(bin, k):
 		j -= 1
 
 	return res 
+
 # This code is contributed by
 # divyamohan123

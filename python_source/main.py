@@ -12,7 +12,7 @@ def main():
     n = int(input("insert modulus\n"))
 
     modexp:ModulusExponential = BinaryMethod(BlakleyMethod(EuclidianModulus()))
-    print(modexp(n, BitVector.fromint(a), BitVector.fromint(b) ))
+    print(modexp(n, BitVector.fromint(a, 32), BitVector.fromint(b, 32) ))
 
 if __name__ == "__main__":
     main()

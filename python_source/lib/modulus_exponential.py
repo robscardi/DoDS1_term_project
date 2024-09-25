@@ -20,9 +20,9 @@ class BinaryMethod(ModulusExponential):
         print(e.__len__())
         if e.__getitem__(e.__len__() - 1) == 1:
             z = M.__value__()
-            C = BitVector.fromint(z)
+            C = BitVector.fromint(z, len(M))
         else:
-            C = BitVector.fromint(1)
+            C = BitVector.fromint(1, len(M))
         print(C.__strvalue__())
         for i in reversed(range(e.__len__()-1)):
             C = self.modMult(n, C,C)
