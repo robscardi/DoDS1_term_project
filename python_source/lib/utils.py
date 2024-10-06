@@ -34,17 +34,17 @@ class BitVector:
         return BitVector.fromstr(''.join('1' if char == '0' else '0' for char in self.__bit_string))
 
     def __add__(self, value: Self) -> Self:
-        return BitVector.fromint(self.__int_value + value.__int_value, max(len(self), len(value)))        
+        return BitVector.fromint(self.get_value() + value.get_value(), max(len(self), len(value)))        
     def __sub__(self, value:Self) -> Self:
-        return BitVector.fromint(self.__int_value - value.__int_value, max(len(self), len(value)))
+        return BitVector.fromint(self.get_value() - value.get_value(), max(len(self), len(value)))
     
     def __eq__(self, value:Self) -> bool:
-        return self.__int_value == value.__int_value
+        return self.get_value() == value.get_value()
 
     def __gt__(self, value:Self) -> bool:   
-        return self.__int_value > value.__int_value
+        return self.get_value() > value.get_value()
     def __lt__(self, value:Self) -> bool:   
-        return self.__int_value < value.__int_value
+        return self.get_value() < value.get_value()
     def __ge__(self, value:Self) -> bool:
         return self > value | self == value
 

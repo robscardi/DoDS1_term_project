@@ -17,8 +17,8 @@ def main():
     #a, b and n should be representable with 256 bit. for bigger values modify the bit vector lenght inside the
     #BitVector.fromint function
     bitlen = 256
-    print(modexp(n, BitVector.fromint(a, bitlen), BitVector.fromint(b, bitlen) ).__value__())
-    print(modexp(n, BitVector.fromint(a, bitlen), BitVector.fromint(b, bitlen) ).__strvalue__())
+    print(modexp(n, BitVector.fromint(a, bitlen), BitVector.fromint(b, bitlen) ).get_value())
+    print(modexp(n, BitVector.fromint(a, bitlen), BitVector.fromint(b, bitlen) ).get_str())
 
 if __name__ == "__main__":
     main()
