@@ -13,7 +13,7 @@ ARCHITECTURE projecttb OF project_tb IS
     
     CONSTANT CLOCK_PERIOD : TIME := 10 ns;
     CONSTANT input_width : POSITIVE := 256;
-    CONSTANT scenario_length : POSITIVE := 1;
+    CONSTANT scenario_length : POSITIVE := 2;
     CONSTANT RESET_TIME     : TIME := 2*CLOCK_PERIOD;
 
     type num_array is array (natural range<>) of integer;
@@ -31,9 +31,9 @@ ARCHITECTURE projecttb OF project_tb IS
     signal tb_output_valid : STD_ULOGIC := '0';
 
     -- SCENARIO SIGNALS
-    signal input_a_scenario     : num_array(scenario_length-1 downto 0) := ( 0 => 3649);
-    signal input_b_scenario     : num_array(scenario_length-1 downto 0) := ( 0 => 2753);
-    signal input_mod_scenario   : num_array(scenario_length-1 downto 0) := ( 0 => 28098);
+    signal input_a_scenario     : num_array(scenario_length-1 downto 0) := ( 0 => 3649, 1 => 2345);
+    signal input_b_scenario     : num_array(scenario_length-1 downto 0) := ( 0 => 2753, 1 => 8493 );
+    signal input_mod_scenario   : num_array(scenario_length-1 downto 0) := ( 0 => 28097, 1 => 13984);
 
     component modulus_multiplication is
         generic(
@@ -105,9 +105,8 @@ begin
             correct_res := TO_UNSIGNED((input_a_scenario(i) * input_b_scenario(i)) mod input_mod_scenario(i), input_width);
             assert tb_mod_res = STD_ULOGIC_VECTOR(correct_res)
                 report "FAILED AT ITERATION " & integer'image(i) &  " UUT result: " & integer'image(to_integer(unsigned(tb_mod_res))) & "\n CORRECT result: " & integer'image(to_integer(correct_res))
-                severity note;
+                severity failure;
         end loop;
-        wait;
         WAIT UNTIL rising_edge(tb_clk);
         assert false report "TEST SUCCESSFULL" severity failure;
     end process;
