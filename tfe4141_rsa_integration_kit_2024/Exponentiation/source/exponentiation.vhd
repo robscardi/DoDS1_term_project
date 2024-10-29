@@ -4,7 +4,7 @@ use ieee.numeric_std.all;
 library work;
 use work.math_utilities.all;
 use work.pwr_message_type.all;
-
+use work.fsm.all;
 
 entity exponentiation is
 	generic (
@@ -32,25 +32,41 @@ entity exponentiation is
 
 		--utility
 		clk 		: in STD_ULOGIC;
-		reset_n 	: in STD_ULOGIC
+		reset_n 	: in STD_ULOGIC;
+		
+		f_i_out : out std_ulogic_vector(2 downto 0);
+		i_out : out integer;
+		curr_state_out : out state;
+		next_state_out : out state;
+		mult_done_out : out std_ulogic;
+		mult_en_out : out std_ulogic;
+		mult_a_out : out std_ulogic_vector(255 downto 0);
+	    mult_b_out : out std_ulogic_vector(255 downto 0);
+	    partial_pwr_out : out std_ulogic_vector(255 downto 0);
+	    partial_res_out : out std_ulogic_vector(255 downto 0)
+
+		
 	);
 end exponentiation;
 
 
 architecture expBehave of exponentiation is
     -- States for the state machine
-    type state is (IDLE, POWER, MULTIPLY, DONE);
-    signal curr_state, next_state : state := IDLE;
-    signal input_en             : std_ulogic;
+    --type state is (IDLE, SQUARE1, SQUARE2, SQUARE3, MULTIPLY, DONE);
+    signal curr_state, next_state : state;
+    signal input_en             : STD_ULOGIC;
+    signal is_active            : STD_ULOGIC;
 	signal partial_res          : STD_ULOGIC_VECTOR(C_block_size-1 downto 0):= (others => '0');
-	signal partial_pwr			: STD_ULOGIC_VECTOR(2*C_block_size-1 downto 0):= (others => '0');
-	signal i 					: unsigned(6 downto 0) := (others => '0'); --Works only for 256 bits here
+	signal partial_pwr			: STD_ULOGIC_VECTOR(C_block_size-1 downto 0):= (others => '0');
+	signal i 					: unsigned(6 downto 0); --Works only for 256 bits here
+	signal nxt_i 				: unsigned(6 downto 0); --Works only for 256 bits here
 	signal f_i 					: STD_ULOGIC_VECTOR(2 downto 0);
-	signal mult_en  			: std_ulogic;
+	signal mult_en  			: STD_ULOGIC;
     signal mult_a 				: STD_ULOGIC_VECTOR(C_block_size-1 downto 0);
     signal mult_b 				: STD_ULOGIC_VECTOR(C_block_size-1 downto 0);
     signal mult_out 			: STD_ULOGIC_VECTOR(C_block_size-1 downto 0);
-    signal mult_done			: std_ulogic;
+    signal mult_done			: STD_ULOGIC;
+
 
     component modulus_multiplication is
         generic(
@@ -73,7 +89,7 @@ architecture expBehave of exponentiation is
     
 begin
 
-    mod_mult : component modulus_multiplication 
+    mod_mult : modulus_multiplication 
         port map(
                 clk => clk, 
                 reset_n => reset_n, 
@@ -85,17 +101,36 @@ begin
                 output_ready => mult_done
         );
 
-input_en <= valid_in; ---Need to add a "is_active" variable. then valid_in and not(is_active)
+input_en <= valid_in and not(is_active);
+ready_in <= not(is_active);
 
-CombProc : process(curr_state, input_en )
+-- Signals to observe during testbench
+f_i_out <= f_i;
+i_out <= TO_INTEGER(i);
+curr_state_out <= curr_state;
+next_state_out <= next_state;
+mult_done_out <= mult_done;
+mult_en_out <= mult_en;
+mult_a_out <= mult_a;
+mult_b_out <= mult_b;
+partial_pwr_out <= partial_pwr;
+partial_res_out <= partial_res;
+--
+
+CombProc : process(curr_state, input_en, key, message,i,nxt_i, partial_res, partial_pwr, f_i, pwr_message, mult_done, mult_out, ready_out)
+--CombProc : process(curr_state, input_en)
     begin
         case curr_state is
             when IDLE =>
+                result <= (others => '0');
+                valid_out <= '0';
+                is_active <= '0';
                 partial_res <= (others => '0');
                 partial_pwr <= (others => '0');
                 f_i <= (others => '0');
-                i <= to_unsigned(85,7);
-                mult_en <= '0';
+                i <= to_unsigned(84,7);
+                nxt_i <= to_unsigned(84,7);
+                --mult_en <= '0';
                 mult_a <= (others => '0');
                 mult_b <= (others => '0');
                 if (input_en = '1') then
@@ -104,43 +139,85 @@ CombProc : process(curr_state, input_en )
                     else
                         partial_res(0) <= '1';
                     end if;
-                    next_state <= POWER;
+                    next_state <= SQUARE1;
                 else
                     next_state <= IDLE;
                 end if;
-
-
-            when POWER =>
-                if (i >= 0) then
-                    for j in 1 to 3 loop
-                        partial_pwr <= std_ulogic_vector(unsigned(partial_res) * unsigned(partial_res));
-                        partial_res <= partial_pwr(255 downto 0);
-                    end loop;
-                    --partial_pwr <= STD_ULOGIC_VECTOR(unsigned(partial_res) ** 8);
-                    f_i <= key(3*TO_INTEGER(i)+2 downto 3*TO_INTEGER(i));
-                    if f_i /= "000" then
-                        mult_a <= partial_res;
-                        mult_b <= pwr_message(TO_INTEGER(unsigned(f_i))-1);
-                        mult_en <= '1';
-                        next_state <= MULTIPLY;
-                    end if;
-                    i <= i - 1;    
+            
+            when SQUARE1 =>
+                is_active <= '1';
+                result <= (others => '0');
+                valid_out <= '0';
+                i <= nxt_i;
+                if (TO_INTEGER(i) < 100) then
+                    f_i <= key((3*TO_INTEGER(i)+2) downto (3*TO_INTEGER(i)));
+                    mult_a <= partial_res;
+                    mult_b <= partial_res;
+                    if (mult_done = '1' and mult_en = '0') then
+                        next_state <= SQUARE2;
+                        partial_pwr <= mult_out;
+                    end if;  
                 else
                     next_state <= DONE;
-                end if;
-
-            when MULTIPLY =>
-                if (mult_done = '1') then
+                    --result <= partial_res;
+                end if;                
+                
+            when SQUARE2 =>
+                is_active <= '1';
+                result <= (others => '0');
+                valid_out <= '0';
+                mult_a <= partial_pwr;
+                mult_b <= partial_pwr;
+                if (mult_done = '1' and mult_en = '0') then
+                    next_state <= SQUARE3;
                     partial_res <= mult_out;
-                    next_state <= POWER;
+                    nxt_i <= i-1;
+                end if;
+                
+            when SQUARE3 =>
+                is_active <= '1';
+                result <= (others => '0');
+                valid_out <= '0';
+                mult_a <= partial_res;
+                mult_b <= partial_res;
+                if (mult_done = '1' and mult_en = '0') then
+                    partial_pwr <= mult_out;
+                    nxt_i <= i-1;
+                    if (f_i /= "000") then
+                        next_state <= MULTIPLY;
+                    else
+                        next_state <= SQUARE1;
+                end if;
+                end if;
+                
+                
+            when MULTIPLY =>
+                is_active <= '1';
+                result <= (others => '0');
+                valid_out <= '0';
+                mult_a <= partial_pwr;
+                mult_b <= pwr_message(TO_INTEGER(unsigned(f_i))-1);
+                if (mult_done = '1' and mult_en = '0') then
+                    next_state <= SQUARE1;
+                    partial_res <= mult_out;  
                 end if;
 
             when DONE =>
-                valid_out <= '1';               
-                result <= partial_res;  
-                next_state <= IDLE;       
-
+                is_active <= '1';
+                if (ready_out = '1') then
+                    valid_out <= '1';               
+                    result <= partial_res;  
+                    next_state <= IDLE;
+--                else
+--                    result <= (others => '0');
+--                    valid_out <= '0';
+--                    next_state <= DONE;
+                end if;       
+    
             when others =>
+                is_active <= '0';
+                result <= (others => '0');
+                valid_out <= '0';
                 next_state <= IDLE;
         end case;
     end process;
@@ -151,11 +228,12 @@ SynchProc   : process (reset_n, clk)
                         curr_state <= IDLE;
                     elsif rising_edge(clk) then
                         curr_state <= next_state;
+                        if (next_state /= curr_state) then
+                            mult_en <= '1';
+                        else
+                            mult_en <= '0';
+                        end if;
                     end if;
                 end process SynchProc;
-
-	--result <= partial_res;
-	--ready_in <= ready_out;
-	--valid_out <= valid_in;
 
 end expBehave;

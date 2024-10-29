@@ -1,7 +1,8 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
-use work.pwr_message_type.all;  -- Assuming pwr_message_type is defined elsewhere
+use work.pwr_message_type.all; 
+use work.fsm.all;
 
 entity tb_exponentiation is
 end tb_exponentiation;
@@ -10,22 +11,37 @@ architecture test of tb_exponentiation is
     constant C_block_size : integer := 256;
 
     -- Input signals to DUT
-    signal valid_in     : std_ulogic := '0';
-    signal ready_in     : std_ulogic := '1';
+    signal valid_in     : std_ulogic;
+    signal ready_in     : std_ulogic;
     signal message      : std_ulogic_vector(C_block_size-1 downto 0);
     signal key          : std_ulogic_vector(C_block_size-1 downto 0);
     signal pwr_message  : pwr_message_array;  -- Assuming correct type
     signal modulus      : std_ulogic_vector(C_block_size-1 downto 0);
 
     -- Output signals from DUT
-    signal ready_out    : std_ulogic;
+    signal ready_out    : std_ulogic := '1';
     signal valid_out    : std_ulogic;
     signal result       : std_ulogic_vector(C_block_size-1 downto 0);
 
     -- Clock and Reset
     signal clk          : std_ulogic := '0';
     signal reset_n      : std_ulogic := '1';
+    
+    signal f_i_out : std_ulogic_vector(2 downto 0);
+    signal i_out : integer;
+    signal curr_state_out : state;
+    signal next_state_out : state;
+    signal partial_pwr_out : std_ulogic_vector(255 downto 0);
+    signal partial_res_out : std_ulogic_vector(255 downto 0);
+    signal mult_done_out : std_ulogic;
+    signal mult_en_out : std_ulogic;
+    signal mult_a_out : std_ulogic_vector(255 downto 0);
+    signal mult_b_out : std_ulogic_vector(255 downto 0);
+    signal int_message : integer := 19; 
+    signal int_key : integer := 3072;
+    signal int_modulus : integer := 2359;
 
+    
     -- Clock period
     constant clk_period : time := 10 ns;
     
@@ -53,7 +69,17 @@ begin
             result      => result,
             modulus     => modulus,
             clk         => clk,
-            reset_n     => reset_n
+            reset_n     => reset_n,
+            f_i_out => f_i_out,
+            i_out => i_out,
+            curr_state_out => curr_state_out,
+            next_state_out => next_state_out,
+            mult_done_out => mult_done_out,
+            mult_en_out => mult_en_out,
+            mult_a_out => mult_a_out,
+            mult_b_out => mult_b_out,
+            partial_pwr_out => partial_pwr_out,
+            partial_res_out => partial_res_out
         );
 
     -- Clock process
@@ -64,6 +90,14 @@ begin
         clk <= '1';
         wait for clk_period / 2;
     end process clk_process;
+    
+    process
+begin
+    --wait until result /= (others => '0');
+    wait until valid_out = '1';
+    report "Simulation stopped: valid_out = '1'" severity note;
+    std.env.stop;  -- Stop the simulation
+end process;
 
     -- Stimulus process
     stimulus : process
@@ -77,19 +111,21 @@ begin
         -- Apply first test case
         wait for 10 ns;
         valid_in <= '1';
-        message <= (others => '0');  
-        message(2) <= '1';              --base = 4
-        key <= (others => '0');      
-        key(4 downto 0) <= "10010";             -- exponent = 18
-        modulus <= (others => '0');  
-        modulus(4 downto 0) <= "11101";  -- modulus = 29
-        pwr_message(0) <= to_stdulogic_vector_256(4**1);
-        pwr_message(1) <= to_stdulogic_vector_256(4**2);
-        pwr_message(2) <= to_stdulogic_vector_256(4**3);
-        pwr_message(3) <= to_stdulogic_vector_256(4**4);
-        pwr_message(4) <= to_stdulogic_vector_256(4**5);
-        pwr_message(5) <= to_stdulogic_vector_256(4**6);
-        pwr_message(6) <= to_stdulogic_vector_256(4**7);
+--        int_message <= 19;
+--        int_key <= 27;
+--        int_modulus <= 41;
+        
+        message <= to_stdulogic_vector_256(int_message);
+        key <= to_stdulogic_vector_256(int_key);
+        modulus <= to_stdulogic_vector_256(int_modulus);
+        -- Need to take the modulus of the powers, otherwise Blackley doesn't work
+        pwr_message(0) <= to_stdulogic_vector_256(int_message**1 mod int_modulus);
+        pwr_message(1) <= to_stdulogic_vector_256(int_message**2 mod int_modulus);
+        pwr_message(2) <= to_stdulogic_vector_256(int_message**3 mod int_modulus);
+        pwr_message(3) <= to_stdulogic_vector_256(int_message**4 mod int_modulus);
+        pwr_message(4) <= to_stdulogic_vector_256(int_message**5 mod int_modulus);
+        pwr_message(5) <= to_stdulogic_vector_256(int_message**6 mod int_modulus);
+        pwr_message(6) <= to_stdulogic_vector_256(int_message**7 mod int_modulus);
         -- Wait for result
         wait for 500 ns;
 
