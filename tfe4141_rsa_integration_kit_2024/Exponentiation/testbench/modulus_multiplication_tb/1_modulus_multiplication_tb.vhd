@@ -93,7 +93,7 @@ begin
     begin
 
         WAIT UNTIL tb_rst = '1';
-        for i in  scenario_length-1 to 0 loop
+        for i in  scenario_length-1 downto 0 loop
             WAIT UNTIL rising_edge(tb_clk);
             tb_input_a <= STD_ULOGIC_VECTOR(TO_UNSIGNED(input_a_scenario(i), input_width));
             tb_input_b <= STD_ULOGIC_VECTOR(TO_UNSIGNED(input_b_scenario(i), input_width));
