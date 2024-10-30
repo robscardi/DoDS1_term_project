@@ -117,7 +117,7 @@ partial_pwr_out <= partial_pwr;
 partial_res_out <= partial_res;
 --
 
-CombProc : process(curr_state, input_en, key, message,i,nxt_i, partial_res, partial_pwr, f_i, pwr_message, mult_done, mult_out, ready_out)
+CombProc : process(curr_state, input_en, key, message,i,nxt_i, partial_res, partial_pwr, f_i, pwr_message, mult_en,mult_done, mult_out, ready_out)
 --CombProc : process(curr_state, input_en)
     begin
         case curr_state is
