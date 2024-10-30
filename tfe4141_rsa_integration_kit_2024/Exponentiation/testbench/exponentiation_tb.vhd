@@ -29,6 +29,7 @@ architecture test of tb_exponentiation is
     
     signal f_i_out : std_ulogic_vector(2 downto 0);
     signal i_out : integer;
+    signal pwr_message_idx_out : integer;
     signal curr_state_out : state;
     signal next_state_out : state;
     signal partial_pwr_out : std_ulogic_vector(255 downto 0);
@@ -37,7 +38,10 @@ architecture test of tb_exponentiation is
     signal mult_en_out : std_ulogic;
     signal mult_a_out : std_ulogic_vector(255 downto 0);
     signal mult_b_out : std_ulogic_vector(255 downto 0);
-    signal int_message : integer := 19; 
+    
+    
+    
+    signal int_message : integer := 19;
     signal int_key : integer := 3072;
     signal int_modulus : integer := 2359;
 
@@ -63,7 +67,7 @@ begin
             ready_in    => ready_in,
             message     => message,
             key         => key,
-            pwr_message => pwr_message,
+            --pwr_message => pwr_message,
             ready_out   => ready_out,
             valid_out   => valid_out,
             result      => result,
@@ -118,14 +122,7 @@ end process;
         message <= to_stdulogic_vector_256(int_message);
         key <= to_stdulogic_vector_256(int_key);
         modulus <= to_stdulogic_vector_256(int_modulus);
-        -- Need to take the modulus of the powers, otherwise Blackley doesn't work
-        pwr_message(0) <= to_stdulogic_vector_256(int_message**1 mod int_modulus);
-        pwr_message(1) <= to_stdulogic_vector_256(int_message**2 mod int_modulus);
-        pwr_message(2) <= to_stdulogic_vector_256(int_message**3 mod int_modulus);
-        pwr_message(3) <= to_stdulogic_vector_256(int_message**4 mod int_modulus);
-        pwr_message(4) <= to_stdulogic_vector_256(int_message**5 mod int_modulus);
-        pwr_message(5) <= to_stdulogic_vector_256(int_message**6 mod int_modulus);
-        pwr_message(6) <= to_stdulogic_vector_256(int_message**7 mod int_modulus);
+        
         -- Wait for result
         wait for 500 ns;
 

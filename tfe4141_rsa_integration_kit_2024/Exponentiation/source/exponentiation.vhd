@@ -18,7 +18,7 @@ entity exponentiation is
 		--input data
 		message 	: in STD_ULOGIC_VECTOR ( C_block_size-1 downto 0 );
 		key 		: in STD_ULOGIC_VECTOR ( C_block_size-1 downto 0 );
-		pwr_message : in pwr_message_array; --Need to be adapted in the rsa_msgin
+		--pwr_message : in pwr_message_array; --Need to be adapted in the rsa_msgin
 
 		--ouput controll
 		ready_out	: in STD_ULOGIC;
@@ -66,6 +66,9 @@ architecture expBehave of exponentiation is
     signal mult_b 				: STD_ULOGIC_VECTOR(C_block_size-1 downto 0);
     signal mult_out 			: STD_ULOGIC_VECTOR(C_block_size-1 downto 0);
     signal mult_done			: STD_ULOGIC;
+    signal pwr_message          : pwr_message_array;
+    signal inter                : STD_ULOGIC_VECTOR(C_block_size-1 downto 0);
+
 
 
     component modulus_multiplication is
@@ -117,7 +120,9 @@ partial_pwr_out <= partial_pwr;
 partial_res_out <= partial_res;
 --
 
-CombProc : process(curr_state, input_en, key, message,i,nxt_i, partial_res, partial_pwr, f_i, pwr_message, mult_en,mult_done, mult_out, ready_out)
+
+
+CombProc : process(curr_state, input_en, key, message,i,nxt_i, partial_res, partial_pwr, f_i, pwr_message, mult_en, mult_done,mult_out, ready_out)
 --CombProc : process(curr_state, input_en)
     begin
         case curr_state is
@@ -127,6 +132,8 @@ CombProc : process(curr_state, input_en, key, message,i,nxt_i, partial_res, part
                 is_active <= '0';
                 partial_res <= (others => '0');
                 partial_pwr <= (others => '0');
+                pwr_message <= (others => (others => '0'));
+                inter <= (others => '0');
                 f_i <= (others => '0');
                 i <= to_unsigned(84,7);
                 nxt_i <= to_unsigned(84,7);
@@ -139,15 +146,89 @@ CombProc : process(curr_state, input_en, key, message,i,nxt_i, partial_res, part
                     else
                         partial_res(0) <= '1';
                     end if;
-                    next_state <= SQUARE1;
+                    next_state <= PRECALC1;
                 else
                     next_state <= IDLE;
                 end if;
+                
+            when PRECALC1 =>
+                is_active <= '1';
+                result <= (others => '0');
+                valid_out <= '0';
+                mult_a(0) <= '1';
+                mult_b <= message;
+                if (mult_done = '1' and mult_en = '0') then
+                    inter <= mult_out;
+                    pwr_message(0) <= inter;
+                    next_state <= PRECALC2;
+                end if;
+                
+            when PRECALC2 =>
+                is_active <= '1';
+                result <= (others => '0');
+                valid_out <= '0';
+                
+                mult_a <= pwr_message(0);
+                mult_b <= pwr_message(0);
+                if (mult_done = '1' and mult_en = '0') then
+                    pwr_message(1) <= mult_out;
+                    next_state <= PRECALC3;
+                end if;
+                
+            when PRECALC3 =>
+                is_active <= '1';
+                result <= (others => '0');
+                valid_out <= '0';
+                mult_a <= pwr_message(1);
+                if (mult_done = '1' and mult_en = '0') then
+                    pwr_message(2) <= mult_out;
+                    next_state <= PRECALC4;
+                end if;
+                
+            when PRECALC4 =>
+                is_active <= '1';
+                result <= (others => '0');
+                valid_out <= '0';
+                mult_a <= pwr_message(2);
+                if (mult_done = '1' and mult_en = '0') then
+                    pwr_message(3) <= mult_out;
+                    next_state <= PRECALC5;
+                end if;
+                 
+             when PRECALC5 =>
+                is_active <= '1';
+                result <= (others => '0');
+                valid_out <= '0';
+                mult_a <= pwr_message(3);
+                if (mult_done = '1' and mult_en = '0') then
+                    pwr_message(4) <= mult_out;
+                    next_state <= PRECALC6;
+                end if;
+                
+            when PRECALC6 =>
+                is_active <= '1';
+                result <= (others => '0');
+                valid_out <= '0';
+                mult_a <= pwr_message(4);
+                if (mult_done = '1' and mult_en = '0') then
+                    pwr_message(5) <= mult_out;
+                    next_state <= PRECALC7;
+                end if;
+                
+            when PRECALC7 =>
+                is_active <= '1';
+                result <= (others => '0');
+                valid_out <= '0';
+                mult_a <= pwr_message(5);
+                if (mult_done = '1' and mult_en = '0') then
+                    pwr_message(6) <= mult_out;
+                    next_state <= SQUARE1;
+                end if;                 
             
             when SQUARE1 =>
                 is_active <= '1';
                 result <= (others => '0');
-                valid_out <= '0';
+                valid_out <= '0'; -- JUST TO TEST PRECALC
                 i <= nxt_i;
                 if (TO_INTEGER(i) < 100) then
                     f_i <= key((3*TO_INTEGER(i)+2) downto (3*TO_INTEGER(i)));
