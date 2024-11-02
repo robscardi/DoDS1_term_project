@@ -88,6 +88,7 @@ begin
 input_en <= valid_in; ---Need to add a "is_active" variable. then valid_in and not(is_active)
 
 CombProc : process(curr_state, input_en )
+    variable padded_key : STD_ULOGIC_VECTOR(C_BLOCK_SIZE-1+ 2 downto 0) := (others => '0'); 
     begin
         case curr_state is
             when IDLE =>
@@ -98,6 +99,9 @@ CombProc : process(curr_state, input_en )
                 mult_en <= '0';
                 mult_a <= (others => '0');
                 mult_b <= (others => '0');
+                padded_key := "00" & key;
+                result <= (others => '0');
+                valid_out <= '0'; 
                 if (input_en = '1') then
                     if (key(255) = '1') then
                         partial_res <= message;
@@ -117,12 +121,17 @@ CombProc : process(curr_state, input_en )
                         partial_res <= partial_pwr(255 downto 0);
                     end loop;
                     --partial_pwr <= STD_ULOGIC_VECTOR(unsigned(partial_res) ** 8);
-                    f_i <= key(3*TO_INTEGER(i)+2 downto 3*TO_INTEGER(i));
+                    f_i <= padded_key(3*TO_INTEGER(i)+2 downto 3*TO_INTEGER(i));
                     if f_i /= "000" then
                         mult_a <= partial_res;
                         mult_b <= pwr_message(TO_INTEGER(unsigned(f_i))-1);
                         mult_en <= '1';
                         next_state <= MULTIPLY;
+                    else 
+                        mult_a <= (others => '0') ;
+                        mult_b <= (others => '0') ;
+                        mult_en <= '0';
+                        next_state <= curr_state;
                     end if;
                     i <= i - 1;    
                 else
@@ -133,6 +142,9 @@ CombProc : process(curr_state, input_en )
                 if (mult_done = '1') then
                     partial_res <= mult_out;
                     next_state <= POWER;
+                else 
+                    partial_res <= partial_res;
+                    next_state <= curr_state;
                 end if;
 
             when DONE =>

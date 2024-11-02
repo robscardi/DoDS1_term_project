@@ -4,12 +4,10 @@ USE ieee.numeric_std.ALL;
 USE ieee.std_logic_unsigned.ALL;
 USE std.textio.ALL;
 
+ENTITY mod_mult_1_tb IS
+END mod_mult_1_tb;
 
-
-ENTITY project_tb IS
-END project_tb;
-
-ARCHITECTURE projecttb OF project_tb IS
+ARCHITECTURE projecttb OF mod_mult_1_tb IS
     
     CONSTANT CLOCK_PERIOD : TIME := 10 ns;
     CONSTANT input_width : POSITIVE := 256;
@@ -93,7 +91,7 @@ begin
     begin
 
         WAIT UNTIL tb_rst = '1';
-        for i in  scenario_length-1 to 0 loop
+        for i in  scenario_length-1 downto 0 loop
             WAIT UNTIL rising_edge(tb_clk);
             tb_input_a <= STD_ULOGIC_VECTOR(TO_UNSIGNED(input_a_scenario(i), input_width));
             tb_input_b <= STD_ULOGIC_VECTOR(TO_UNSIGNED(input_b_scenario(i), input_width));
