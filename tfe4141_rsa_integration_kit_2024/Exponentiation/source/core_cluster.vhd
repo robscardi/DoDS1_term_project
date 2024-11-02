@@ -66,7 +66,6 @@ architecture bhv of cluster_core is
 		--input data
 		message 	: in STD_ULOGIC_VECTOR ( C_block_size-1 downto 0 );
 		key 		: in STD_ULOGIC_VECTOR ( C_block_size-1 downto 0 );
-		pwr_message : in pwr_message_array; --Need to be adapted in the rsa_msgin
 
 		--ouput controll
 		ready_out	: in STD_ULOGIC;
@@ -96,7 +95,6 @@ begin
             ready_in => ready_in,
             message => fifo_input(i),
             key => key,
-            pwr_message => pwr_message_current,
             ready_out => fifo_out_ready(i),
             valid_out => exp_valid_out(i),
             result => fifo_out(i),

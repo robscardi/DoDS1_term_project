@@ -124,9 +124,9 @@ begin
     elsif (rising_edge(clk)) then
         if(partial_res_ready = '1' and is_active = '1') then
             if (a_r(C_BLOCK_SIZE-1) = '1') then
-                partial_sum <= STD_LOGIC_VECTOR(shift_left(unsigned(partial_res),1) + unsigned(b_r));
+                partial_sum <= STD_ULOGIC_VECTOR(shift_left(unsigned(partial_res),1) + unsigned(b_r));
             else
-                partial_sum <= STD_LOGIC_VECTOR(shift_left(unsigned(partial_res),1)); 
+                partial_sum <= STD_ULOGIC_VECTOR(shift_left(unsigned(partial_res),1)); 
             end if;
             partial_sum_ready <= '1';
             partial_res_ready <= '0';
