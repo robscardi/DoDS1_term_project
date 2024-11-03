@@ -24,6 +24,7 @@ set source_files [list \
 set sim_files [list \
 	{*}[glob -nocomplain -directory [file normalize "$origin_dir/testbench/"] -type f *]\
 	{*}[glob -nocomplain -directory [file normalize "$origin_dir/testbench/modulus_multiplication_tb"] -type f *]\
+	{*}[glob -nocomplain -directory [file normalize "$origin_dir/testbench/exponentiation_tb"] -type f *]\
 ]
 
 add_files -fileset sim_1 -norecurse "$origin_dir/mod_mult.wcfg"

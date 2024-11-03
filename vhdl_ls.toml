@@ -17,6 +17,8 @@ soc.files = [
 
 lib.files = [
 "tfe4141_rsa_integration_kit_2024\\Exponentiation\\testbench\\*.vhd",
+"tfe4141_rsa_integration_kit_2024\\Exponentiation\\testbench\\exponentiation_tb\\*.vhd",
+"tfe4141_rsa_integration_kit_2024\\Exponentiation\\testbench\\modulus_multiplication_tb\\*.vhd",
 "tfe4141_rsa_integration_kit_2024\\Exponentiation\\source\\*.vhd",
 ]
 

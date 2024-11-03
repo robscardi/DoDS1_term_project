@@ -4,12 +4,10 @@ USE ieee.numeric_std.ALL;
 USE ieee.std_logic_unsigned.ALL;
 USE std.textio.ALL;
 
+ENTITY mod_mult_1_tb IS
+END mod_mult_1_tb;
 
-
-ENTITY project_tb IS
-END project_tb;
-
-ARCHITECTURE projecttb OF project_tb IS
+ARCHITECTURE projecttb OF mod_mult_1_tb IS
     
     CONSTANT CLOCK_PERIOD : TIME := 10 ns;
     CONSTANT input_width : POSITIVE := 256;
