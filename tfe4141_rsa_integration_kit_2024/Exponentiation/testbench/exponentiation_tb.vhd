@@ -4,10 +4,10 @@ use ieee.numeric_std.all;
 use work.pwr_message_type.all; 
 use work.fsm.all;
 
-entity tb_exponentiation is
-end tb_exponentiation;
+entity Exponentiation_tb is
+end Exponentiation_tb;
 
-architecture test of tb_exponentiation is
+architecture test of Exponentiation_tb is
     constant C_block_size : integer := 256;
 
     -- Input signals to DUT
@@ -41,7 +41,7 @@ architecture test of tb_exponentiation is
     
     
     
-    signal int_message : integer := 19;
+    signal int_message : integer := 19087;
     signal int_key : integer := 3072;
     signal int_modulus : integer := 2359;
 

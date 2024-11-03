@@ -25,9 +25,7 @@ set sim_files [list \
 	{*}[glob -nocomplain -directory [file normalize "$origin_dir/testbench/"] -type f *]\
 	{*}[glob -nocomplain -directory [file normalize "$origin_dir/testbench/modulus_multiplication_tb"] -type f *]\
 	{*}[glob -nocomplain -directory [file normalize "$origin_dir/testbench/exponentiation_tb"] -type f *]\
+	{*}[glob -nocomplain -directory [file normalize "$origin_dir/testbench/core_cluster_tb"] -type f *]\
 ]
-
-add_files -fileset sim_1 -norecurse "$origin_dir/mod_mult.wcfg"
-set_property xsim.view "$origin_dir/mod_mult.wcfg" [get_filesets sim_1]
 
 genProj $_xil_proj_name_ $top_design $top_design_testbench $source_files $sim_files $IP_directory

@@ -2,12 +2,10 @@
 
 acc.files = [
 "tfe4141_rsa_integration_kit_2024\\RSA_accelerator\\testbench\\rsa_accelerator_tb.vhd",
-"tfe4141_rsa_integration_kit_2024\\RSA_accelerator\\source\\rsa_regio.vhd",
-"tfe4141_rsa_integration_kit_2024\\RSA_accelerator\\source\\rsa_msgout.vhd",
-"tfe4141_rsa_integration_kit_2024\\RSA_accelerator\\source\\rsa_msgin.vhd",
-"tfe4141_rsa_integration_kit_2024\\RSA_accelerator\\source\\rsa_core.vhd",
-"tfe4141_rsa_integration_kit_2024\\RSA_accelerator\\source\\rsa_accelerator.vhd",
-"tfe4141_rsa_integration_kit_2024\\RSA_accelerator\\IP\\src\\exponentiation.vhd",
+"tfe4141_rsa_integration_kit_2024\\RSA_accelerator\\source\\*.vhd",
+]
+IP_acc.files = [
+"tfe4141_rsa_integration_kit_2024\\RSA_accelerator\\IP\\src\\*.vhd",
 ]
 
 soc.files = [
@@ -17,8 +15,7 @@ soc.files = [
 
 lib.files = [
 "tfe4141_rsa_integration_kit_2024\\Exponentiation\\testbench\\*.vhd",
-"tfe4141_rsa_integration_kit_2024\\Exponentiation\\testbench\\exponentiation_tb\\*.vhd",
-"tfe4141_rsa_integration_kit_2024\\Exponentiation\\testbench\\modulus_multiplication_tb\\*.vhd",
+"tfe4141_rsa_integration_kit_2024\\Exponentiation\\testbench\\*tb\\*.vhd",
 "tfe4141_rsa_integration_kit_2024\\Exponentiation\\source\\*.vhd",
 ]
 
