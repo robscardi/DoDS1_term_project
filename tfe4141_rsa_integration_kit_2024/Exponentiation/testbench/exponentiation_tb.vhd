@@ -1,21 +1,17 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
-use work.pwr_message_type.all; 
-use work.fsm.all;
 
 entity Exponentiation_tb is
 end Exponentiation_tb;
 
 architecture test of Exponentiation_tb is
     constant C_block_size : integer := 256;
-
     -- Input signals to DUT
     signal valid_in     : std_ulogic;
     signal ready_in     : std_ulogic;
     signal message      : std_ulogic_vector(C_block_size-1 downto 0);
     signal key          : std_ulogic_vector(C_block_size-1 downto 0);
-    signal pwr_message  : pwr_message_array;  -- Assuming correct type
     signal modulus      : std_ulogic_vector(C_block_size-1 downto 0);
 
     -- Output signals from DUT
@@ -27,22 +23,8 @@ architecture test of Exponentiation_tb is
     signal clk          : std_ulogic := '0';
     signal reset_n      : std_ulogic := '1';
     
-    signal f_i_out : std_ulogic_vector(2 downto 0);
-    signal i_out : integer;
-    signal pwr_message_idx_out : integer;
-    signal curr_state_out : state;
-    signal next_state_out : state;
-    signal partial_pwr_out : std_ulogic_vector(255 downto 0);
-    signal partial_res_out : std_ulogic_vector(255 downto 0);
-    signal mult_done_out : std_ulogic;
-    signal mult_en_out : std_ulogic;
-    signal mult_a_out : std_ulogic_vector(255 downto 0);
-    signal mult_b_out : std_ulogic_vector(255 downto 0);
-    
-    
-    
-    signal int_message : integer := 19087;
-    signal int_key : integer := 3072;
+    signal int_message : integer := 19;
+    signal int_key : integer := 3062;
     signal int_modulus : integer := 2359;
 
     
@@ -67,23 +49,12 @@ begin
             ready_in    => ready_in,
             message     => message,
             key         => key,
-            --pwr_message => pwr_message,
             ready_out   => ready_out,
             valid_out   => valid_out,
             result      => result,
             modulus     => modulus,
             clk         => clk,
-            reset_n     => reset_n,
-            f_i_out => f_i_out,
-            i_out => i_out,
-            curr_state_out => curr_state_out,
-            next_state_out => next_state_out,
-            mult_done_out => mult_done_out,
-            mult_en_out => mult_en_out,
-            mult_a_out => mult_a_out,
-            mult_b_out => mult_b_out,
-            partial_pwr_out => partial_pwr_out,
-            partial_res_out => partial_res_out
+            reset_n     => reset_n
         );
 
     -- Clock process

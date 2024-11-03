@@ -32,28 +32,17 @@ entity exponentiation is
 
 		--utility
 		clk 		: in STD_ULOGIC;
-		reset_n 	: in STD_ULOGIC;
-		
-		f_i_out : out std_ulogic_vector(2 downto 0);
-		i_out : out integer;
-		curr_state_out : out state;
-		next_state_out : out state;
-		mult_done_out : out std_ulogic;
-		mult_en_out : out std_ulogic;
-		mult_a_out : out std_ulogic_vector(255 downto 0);
-	    mult_b_out : out std_ulogic_vector(255 downto 0);
-	    partial_pwr_out : out std_ulogic_vector(255 downto 0);
-	    partial_res_out : out std_ulogic_vector(255 downto 0)
-
-		
+		reset_n 	: in STD_ULOGIC
 	);
 end exponentiation;
 
 
 architecture expBehave of exponentiation is
     -- States for the state machine
-    --type state is (IDLE, SQUARE1, SQUARE2, SQUARE3, MULTIPLY, DONE);
+    --type state is (IDLE, PRECALC1, PRECALC2, PRECALC3, PRECALC4, PRECALC5, PRECALC6, PRECALC7, SQUARE1, SQUARE2, SQUARE3, MULTIPLY, DONE);
+    --type pwr_message_array is array (0 to 6) of STD_ULOGIC_VECTOR(255 downto 0);
     signal curr_state, next_state : state;
+    signal pwr_message          : pwr_message_array;
     signal input_en             : STD_ULOGIC;
     signal is_active            : STD_ULOGIC;
 	signal partial_res          : STD_ULOGIC_VECTOR(C_block_size-1 downto 0):= (others => '0');
@@ -66,9 +55,6 @@ architecture expBehave of exponentiation is
     signal mult_b 				: STD_ULOGIC_VECTOR(C_block_size-1 downto 0);
     signal mult_out 			: STD_ULOGIC_VECTOR(C_block_size-1 downto 0);
     signal mult_done			: STD_ULOGIC;
-    signal pwr_message          : pwr_message_array;
-    signal inter                : STD_ULOGIC_VECTOR(C_block_size-1 downto 0);
-
 
 
     component modulus_multiplication is
@@ -107,24 +93,11 @@ begin
 input_en <= valid_in and not(is_active);
 ready_in <= not(is_active);
 
--- Signals to observe during testbench
-f_i_out <= f_i;
-i_out <= TO_INTEGER(i);
-curr_state_out <= curr_state;
-next_state_out <= next_state;
-mult_done_out <= mult_done;
-mult_en_out <= mult_en;
-mult_a_out <= mult_a;
-mult_b_out <= mult_b;
-partial_pwr_out <= partial_pwr;
-partial_res_out <= partial_res;
---
-
-
 
 CombProc : process(curr_state, input_en, key, message,i,nxt_i, partial_res, partial_pwr, f_i, pwr_message, mult_en, mult_done,mult_out, ready_out)
 --CombProc : process(curr_state, input_en)
     begin
+    
         case curr_state is
             when IDLE =>
                 result <= (others => '0');
@@ -133,7 +106,6 @@ CombProc : process(curr_state, input_en, key, message,i,nxt_i, partial_res, part
                 partial_res <= (others => '0');
                 partial_pwr <= (others => '0');
                 pwr_message <= (others => (others => '0'));
-                inter <= (others => '0');
                 f_i <= (others => '0');
                 i <= to_unsigned(84,7);
                 nxt_i <= to_unsigned(84,7);
@@ -158,8 +130,7 @@ CombProc : process(curr_state, input_en, key, message,i,nxt_i, partial_res, part
                 mult_a(0) <= '1';
                 mult_b <= message;
                 if (mult_done = '1' and mult_en = '0') then
-                    inter <= mult_out;
-                    pwr_message(0) <= inter;
+                    pwr_message(0) <= mult_out;
                     next_state <= PRECALC2;
                 end if;
                 
@@ -228,7 +199,7 @@ CombProc : process(curr_state, input_en, key, message,i,nxt_i, partial_res, part
             when SQUARE1 =>
                 is_active <= '1';
                 result <= (others => '0');
-                valid_out <= '0'; -- JUST TO TEST PRECALC
+                valid_out <= '0'; 
                 i <= nxt_i;
                 if (TO_INTEGER(i) < 100) then
                     f_i <= key((3*TO_INTEGER(i)+2) downto (3*TO_INTEGER(i)));
