@@ -5,10 +5,10 @@ USE ieee.std_logic_unsigned.ALL;
 USE std.textio.ALL;
 use work.data_type.all;
 
-ENTITY core_cluster_1_tb IS
-END core_cluster_1_tb;
+ENTITY core_cluster_2_tb IS
+END core_cluster_2_tb;
 
-ARCHITECTURE projecttb OF core_cluster_1_tb IS
+ARCHITECTURE bhvtb OF core_cluster_2_tb IS
     
     CONSTANT CLOCK_PERIOD : TIME := 10 ns;
     CONSTANT input_width : POSITIVE := 256;
@@ -39,14 +39,7 @@ ARCHITECTURE projecttb OF core_cluster_1_tb IS
     signal tb_last_in       : STD_ULOGIC := '0';
     signal tb_last_out      : STD_ULOGIC := '0';
 
-    -- SCENARIO SIGNALS
-    signal input_message    : num_array(Cluster_Num-1 downto 0) := ( 0 => 3649, 1 => 2345, 2 => 2123, 3 => 9089 );
-    signal input_key        : INTEGER                           := ( 1230   );
-    signal input_mod        : INTEGER                           := ( 302304 );
-
-
-    
-
+    file input_file : text open read_mode is "core_cluster_2_tb.txt";
 
     component core_cluster is
 	generic (
@@ -133,11 +126,17 @@ begin
 
     TEST_ROUTINE : process is
         variable correct_res : unsigned(input_width-1 downto 0) := TO_UNSIGNED(0, input_width);
+        variable line_buffer : line;
+        variable read_value : INTEGER;
     begin
 
         WAIT UNTIL tb_rst = '1';
-        tb_modulus  <= STD_ULOGIC_VECTOR(to_unsigned(input_mod, tb_modulus'length));
-        tb_key      <= STD_ULOGIC_VECTOR(to_unsigned(input_key, tb_key'length));
+            readline(input_file, line_buffer);             -- Read each line
+            read(line_buffer, read_value);        
+            tb_key <= STD_ULOGIC_VECTOR(to_unsigned(read_value, input_width));
+            readline(input_file, line_buffer);             -- Read each line
+            read(line_buffer, read_value);        
+            tb_modulus <= STD_ULOGIC_VECTOR(to_unsigned(read_value, input_width));
         
         for i in  CLUSTER_NUM-1 downto 0 loop
             WAIT UNTIL rising_edge(tb_clk);

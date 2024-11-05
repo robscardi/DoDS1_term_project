@@ -3,6 +3,8 @@
 RSA_accelerator/RSA_accelerator/
 RSA_accelerator/IP/
 Exponentiation/Exponentiation/
+Exponentiation/testbench_gen/*
+!Exponentiation/testbench_gen/*.py
 RSA_soc/RSA_soc/
 
 .Xil
