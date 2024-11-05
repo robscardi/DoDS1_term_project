@@ -29,8 +29,6 @@ entity core_cluster is
 		--modulus
 		modulus 	: in STD_ULOGIC_VECTOR(C_block_size-1 downto 0);
 
-        pwr_message : in pwr_message_array;
-
 		--utility
 		clk 		: in STD_ULOGIC;
 		reset_n 	: in STD_ULOGIC;
@@ -56,8 +54,6 @@ architecture bhv of core_cluster is
     signal full_fifo_out   : STD_LOGIC;
     signal fifo_out_ready  : STD_LOGIC_VECTOR(Cluster_Num-1 downto 0);
     signal output_completed     : STD_LOGIC;
-
-    signal pwr_message_current     : pwr_message_array;
 
     signal is_last                 : STD_LOGIC_VECTOR(Cluster_Num-1 downto 0);
     

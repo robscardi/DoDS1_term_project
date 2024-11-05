@@ -30,13 +30,13 @@ def write_to_file(filename, key, modulus, messages_and_results):
     """Write key, modulus, messages, and their results to a file."""
     with open(filename, 'w') as f:
         # Write the key and modulus first
-        f.write(f"{key}\n")
-        f.write(f"{modulus}\n\n")
+        f.write(f"{key:x}\n")
+        f.write(f"{modulus:x}\n\n")
         
         # Write each message and its result
         for message, result in messages_and_results:
-            f.write(f"{message}\n")
-            f.write(f"{result}\n\n")
+            f.write(f"{message:x}\n")
+            f.write(f"{result:x}\n\n")
 
 def main():
     # Generate key and modulus
