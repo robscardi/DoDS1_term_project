@@ -2,41 +2,28 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-entity Exponentiation_tb is
-end Exponentiation_tb;
+entity tb_exponentiation is
+end tb_exponentiation;
 
-architecture test of Exponentiation_tb is
+architecture test of tb_exponentiation is
     constant C_block_size : integer := 256;
+    CONSTANT CLOCK_PERIOD : TIME := 10 ns;
+    
     -- Input signals to DUT
-    signal valid_in     : std_ulogic;
-    signal ready_in     : std_ulogic;
-    signal message      : std_ulogic_vector(C_block_size-1 downto 0);
-    signal key          : std_ulogic_vector(C_block_size-1 downto 0);
-    signal modulus      : std_ulogic_vector(C_block_size-1 downto 0);
+    signal tb_valid_in     : std_ulogic;
+    signal tb_ready_in     : std_ulogic;
+    signal tb_message      : std_ulogic_vector(C_block_size-1 downto 0);
+    signal tb_key          : std_ulogic_vector(C_block_size-1 downto 0);
+    signal tb_modulus      : std_ulogic_vector(C_block_size-1 downto 0);
 
     -- Output signals from DUT
-    signal ready_out    : std_ulogic := '1';
-    signal valid_out    : std_ulogic;
-    signal result       : std_ulogic_vector(C_block_size-1 downto 0);
+    signal tb_ready_out    : std_ulogic := '1';
+    signal tb_valid_out    : std_ulogic;
+    signal tb_result       : std_ulogic_vector(C_block_size-1 downto 0);
 
     -- Clock and Reset
-    signal clk          : std_ulogic := '0';
-    signal reset_n      : std_ulogic := '1';
-    
-    signal int_message : integer := 19;
-    signal int_key : integer := 3062;
-    signal int_modulus : integer := 2359;
-
-    
-    -- Clock period
-    constant clk_period : time := 10 ns;
-    
-        function to_stdulogic_vector_256(num : integer) return std_ulogic_vector is
-        variable result : std_ulogic_vector(255 downto 0);
-    begin
-        result := std_ulogic_vector(to_unsigned(num, 256));
-        return result;
-    end function;
+    signal tb_clk          : std_ulogic := '0';
+    signal tb_reset_n      : std_ulogic := '1';
 
 begin
     -- Instantiate the Unit Under Test (UUT)
@@ -45,60 +32,57 @@ begin
             C_block_size => C_block_size
         )
         port map (
-            valid_in    => valid_in,
-            ready_in    => ready_in,
-            message     => message,
-            key         => key,
-            ready_out   => ready_out,
-            valid_out   => valid_out,
-            result      => result,
-            modulus     => modulus,
-            clk         => clk,
-            reset_n     => reset_n
+            valid_in    => tb_valid_in,
+            ready_in    => tb_ready_in,
+            message     => tb_message,
+            key         => tb_key,
+            ready_out   => tb_ready_out,
+            valid_out   => tb_valid_out,
+            result      => tb_result,
+            modulus     => tb_modulus,
+            clk         => tb_clk,
+            reset_n     => tb_reset_n
         );
 
     -- Clock process
-    clk_process : process
+    PROC_CLK : process is
     begin
-        clk <= '0';
-        wait for clk_period / 2;
-        clk <= '1';
-        wait for clk_period / 2;
-    end process clk_process;
+        WAIT FOR CLOCK_PERIOD/2;
+        tb_clk <= NOT tb_clk;
+    end process;
     
-    process
-begin
-    --wait until result /= (others => '0');
-    wait until valid_out = '1';
-    report "Simulation stopped: valid_out = '1'" severity note;
-    std.env.stop;  -- Stop the simulation
-end process;
 
     -- Stimulus process
-    stimulus : process
+    Stimulus : process
+            variable correct_res : unsigned(C_block_size-1 downto 0) := TO_UNSIGNED(0, C_block_size);
     begin
         -- Initialize inputs
-        
-        reset_n <= '0';   -- Apply reset
-        wait for 20 ns;   -- Hold reset for some time
-        reset_n <= '1';   -- Release reset
-
-        -- Apply first test case
+        tb_reset_n <= '0';   
+        wait for 20 ns;   
+        tb_reset_n <= '1';   
         wait for 10 ns;
-        valid_in <= '1';
---        int_message <= 19;
---        int_key <= 27;
---        int_modulus <= 41;
         
-        message <= to_stdulogic_vector_256(int_message);
-        key <= to_stdulogic_vector_256(int_key);
-        modulus <= to_stdulogic_vector_256(int_modulus);
+        --Use hexadecimal writing to represent large numbers
+        tb_message <= x"045ccbeea1f34185c93d9a08bed7f95b54155c689b9e07e176436811e28ca894";
+        tb_key <= x"123d8009581fcb68bb3c23f5ee33a3ef2a59080d73e0f9a97a2eee84daa7a960";
+        tb_modulus <= x"2130ffe07897762cc37a9c7d5268559f4b0a6b9d3329d8bb1713ee8ab6cf91c7";
+        wait for 10 ns;
         
-        -- Wait for result
-        wait for 500 ns;
-
-        -- End simulation
-        wait;
+        assert unsigned(tb_message) < unsigned(tb_modulus) 
+            report "MESSAGE SHOULD BE SMALLER THAN MODULUS" severity failure;
+        assert unsigned(tb_key) < unsigned(tb_modulus)
+            report "KEY SHOULD BE SMALLER THAN MODULUS" severity failure;
+            
+        tb_valid_in <= '1';
+        WAIT UNTIL tb_valid_out = '1';
+        tb_valid_in <= '0';
+        
+        --Compute correct result with Python using pow(message,key,modulus)
+        correct_res := x"13df3bb55f156c1354ce75d743b1ce34cf4c64c7eb35c2870aa2517a7e088a2a";
+        assert tb_result = std_ulogic_vector(correct_res)
+            report "TEST FAILED" severity failure;
+        WAIT UNTIL rising_edge(tb_clk);
+        assert false report "TEST SUCCESSFUL" severity failure;
     end process;
 
 end test;
