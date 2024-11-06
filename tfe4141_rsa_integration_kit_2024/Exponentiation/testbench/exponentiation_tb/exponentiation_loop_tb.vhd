@@ -65,7 +65,7 @@ begin
         variable line_count : integer := 0;   
 
     begin
-        file_open(txt_file, "C:\exp_loop_tb.txt", read_mode);
+        file_open(txt_file, "exponentiation_loop_tb.txt", read_mode);
             while not endfile(txt_file) loop
             readline(txt_file, line_data);
             hread(line_data, hex_string);
