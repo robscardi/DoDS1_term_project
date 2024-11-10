@@ -39,13 +39,14 @@ architecture expBehave of exponentiation is
     -- States for the state machine
     type state is (IDLE, PRECALC1, PRECALC2, PRECALC3, PRECALC4, PRECALC5, PRECALC6, PRECALC7, SQUARE1, SQUARE2, SQUARE3, MULTIPLY, DONE);
     type pwr_message_array is array (0 to 6) of STD_ULOGIC_VECTOR(255 downto 0);
-    signal curr_state, next_state : state;
+    signal curr_state           : state := IDLE;
+    signal next_state           : state := IDLE;
     signal pwr_message          : pwr_message_array;
+    signal counter_precalc      : unsigned(2 downto 0);
     signal input_en             : STD_ULOGIC;
-    signal is_active            : STD_ULOGIC;
+    signal is_active            : STD_ULOGIC := '0';
 	signal partial_res          : STD_ULOGIC_VECTOR(C_block_size-1 downto 0):= (others => '0');
 	signal i 					: unsigned(6 downto 0); --Works only for 256 bits here
-	signal nxt_i 				: unsigned(6 downto 0); --Works only for 256 bits here
 	signal f_i 					: STD_ULOGIC_VECTOR(2 downto 0);
 	signal mult_en  			: STD_ULOGIC;
     signal mult_a 				: STD_ULOGIC_VECTOR(C_block_size-1 downto 0);
@@ -91,7 +92,8 @@ input_en <= valid_in and not(is_active);
 ready_in <= not(is_active);
 
 
-CombProc : process(curr_state, input_en, key, message,i,nxt_i, partial_res, f_i, pwr_message, mult_en, mult_done,mult_out, ready_out)
+
+CombProc : process(curr_state, input_en, key, message,i, partial_res, f_i, mult_en, mult_done,mult_out, ready_out)
     begin
         next_state <= IDLE;
         case curr_state is
@@ -99,20 +101,10 @@ CombProc : process(curr_state, input_en, key, message,i,nxt_i, partial_res, f_i,
                 result <= (others => '0');
                 valid_out <= '0';
                 is_active <= '0';
-                partial_res <= (others => '0');
-                pwr_message <= (others => (others => '0'));
-                f_i <= (others => '0');
-                i <= to_unsigned(84,7);
-                nxt_i <= to_unsigned(84,7);
+                --pwr_message <= (others => (others => '0'));
                 mult_a <= (others => '0');
                 mult_b <= (others => '0');
                 if (input_en = '1') then --START
-                    -- OCTAL METHOD INITIALIZATION
-                    if (key(255) = '1') then
-                        partial_res <= message;
-                    else
-                        partial_res(0) <= '1';
-                    end if;
                     next_state <= PRECALC1;
                 else
                     next_state <= IDLE;
@@ -122,11 +114,12 @@ CombProc : process(curr_state, input_en, key, message,i,nxt_i, partial_res, f_i,
             when PRECALC1 =>
                 is_active <= '1';
                 result <= (others => '0');
-                valid_out <= '0';
+                valid_out <= '0';                    
+                mult_a <= (others => '0');
                 mult_a(0) <= '1';
                 mult_b <= message;
                 if (mult_done = '1' and mult_en = '0') then
-                    pwr_message(0) <= mult_out;
+                    --pwr_message(0) <= mult_out;
                     next_state <= PRECALC2;
                 else
                     next_state <= PRECALC1;
@@ -136,11 +129,10 @@ CombProc : process(curr_state, input_en, key, message,i,nxt_i, partial_res, f_i,
                 is_active <= '1';
                 result <= (others => '0');
                 valid_out <= '0';
-                
-                mult_a <= pwr_message(0);
-                mult_b <= pwr_message(0);
+                mult_a <= partial_res;
+                mult_b <= partial_res;
                 if (mult_done = '1' and mult_en = '0') then
-                    pwr_message(1) <= mult_out;
+                   -- pwr_message(1) <= mult_out;
                     next_state <= PRECALC3;
                 else
                     next_state <= PRECALC2;
@@ -150,9 +142,10 @@ CombProc : process(curr_state, input_en, key, message,i,nxt_i, partial_res, f_i,
                 is_active <= '1';
                 result <= (others => '0');
                 valid_out <= '0';
-                mult_a <= pwr_message(1);
+                mult_a <= partial_res;
+                mult_b <= pwr_message(0);
                 if (mult_done = '1' and mult_en = '0') then
-                    pwr_message(2) <= mult_out;
+                    --pwr_message(2) <= mult_out;
                     next_state <= PRECALC4;
                 else
                     next_state <= PRECALC3;
@@ -162,9 +155,10 @@ CombProc : process(curr_state, input_en, key, message,i,nxt_i, partial_res, f_i,
                 is_active <= '1';
                 result <= (others => '0');
                 valid_out <= '0';
-                mult_a <= pwr_message(2);
+                mult_a <= partial_res;                
+                mult_b <= pwr_message(0);
                 if (mult_done = '1' and mult_en = '0') then
-                    pwr_message(3) <= mult_out;
+                   -- pwr_message(3) <= mult_out;
                     next_state <= PRECALC5;
                 else
                     next_state <= PRECALC4;
@@ -174,9 +168,10 @@ CombProc : process(curr_state, input_en, key, message,i,nxt_i, partial_res, f_i,
                 is_active <= '1';
                 result <= (others => '0');
                 valid_out <= '0';
-                mult_a <= pwr_message(3);
+                mult_a <= partial_res;                
+                mult_b <= pwr_message(0);
                 if (mult_done = '1' and mult_en = '0') then
-                    pwr_message(4) <= mult_out;
+                    --pwr_message(4) <= mult_out;
                     next_state <= PRECALC6;
                 else
                     next_state <= PRECALC5;
@@ -186,9 +181,10 @@ CombProc : process(curr_state, input_en, key, message,i,nxt_i, partial_res, f_i,
                 is_active <= '1';
                 result <= (others => '0');
                 valid_out <= '0';
-                mult_a <= pwr_message(4);
+                mult_a <= partial_res;                
+                mult_b <= pwr_message(0);
                 if (mult_done = '1' and mult_en = '0') then
-                    pwr_message(5) <= mult_out;
+                   --pwr_message(5) <= mult_out;
                     next_state <= PRECALC7;
                 else
                     next_state <= PRECALC6;
@@ -198,9 +194,10 @@ CombProc : process(curr_state, input_en, key, message,i,nxt_i, partial_res, f_i,
                 is_active <= '1';
                 result <= (others => '0');
                 valid_out <= '0';
-                mult_a <= pwr_message(5);
+                mult_a <= partial_res;
+                mult_b <= pwr_message(0);
                 if (mult_done = '1' and mult_en = '0') then
-                    pwr_message(6) <= mult_out;
+                    --pwr_message(6) <= mult_out;
                     next_state <= SQUARE1;
                 else
                     next_state <= PRECALC7;
@@ -211,20 +208,18 @@ CombProc : process(curr_state, input_en, key, message,i,nxt_i, partial_res, f_i,
                 is_active <= '1';
                 result <= (others => '0');
                 valid_out <= '0'; 
-                i <= nxt_i;
                 if (TO_INTEGER(i) < 100) then
-                    f_i <= key((3*TO_INTEGER(i)+2) downto (3*TO_INTEGER(i)));
                     mult_a <= partial_res;
                     mult_b <= partial_res;
                     if (mult_done = '1' and mult_en = '0') then
                         next_state <= SQUARE2;
-                        partial_res <= mult_out;
                     else
                         next_state <= SQUARE1;
                     end if;  
                 else
+                    mult_a <= (others => '0');
+                    mult_b <= (others => '0');
                     next_state <= DONE;
-                    --result <= partial_res;
                 end if;                
                 
             when SQUARE2 =>
@@ -235,8 +230,6 @@ CombProc : process(curr_state, input_en, key, message,i,nxt_i, partial_res, f_i,
                 mult_b <= partial_res;
                 if (mult_done = '1' and mult_en = '0') then
                     next_state <= SQUARE3;
-                    partial_res <= mult_out;
-                    nxt_i <= i-1;
                 else
                     next_state <= SQUARE2;
                 end if;
@@ -248,8 +241,6 @@ CombProc : process(curr_state, input_en, key, message,i,nxt_i, partial_res, f_i,
                 mult_a <= partial_res;
                 mult_b <= partial_res;
                 if (mult_done = '1' and mult_en = '0') then
-                    partial_res <= mult_out;
-                    nxt_i <= i-1;
                     if (f_i /= "000") then
                         next_state <= MULTIPLY;
                     else
@@ -268,18 +259,21 @@ CombProc : process(curr_state, input_en, key, message,i,nxt_i, partial_res, f_i,
                 mult_b <= pwr_message(TO_INTEGER(unsigned(f_i))-1);
                 if (mult_done = '1' and mult_en = '0') then
                     next_state <= SQUARE1;
-                    partial_res <= mult_out; 
                 else
                     next_state <= MULTIPLY; 
                 end if;
 
             when DONE =>
                 is_active <= '1';
+                mult_a <= (others => '0');
+                mult_b <= (others => '0');
                 if (ready_out = '1') then
-                    valid_out <= '1';               
-                    result <= partial_res;  
+                    valid_out <= '1';
+                    result <= partial_res;                 
                     next_state <= IDLE;
                 else
+                    valid_out <= '0';
+                    result <= (others => '0');
                     next_state <= DONE;
                 end if;       
     
@@ -287,14 +281,17 @@ CombProc : process(curr_state, input_en, key, message,i,nxt_i, partial_res, f_i,
                 is_active <= '0';
                 result <= (others => '0');
                 valid_out <= '0';
+                mult_a <= (others => '0');
+                mult_b <= (others => '0');
                 next_state <= IDLE;
         end case;
     end process;
 
-SynchProc   : process (reset_n, clk)
+SynchProc   : process (reset_n, clk,next_state,curr_state)
                 begin
                     if (reset_n = '0') then
                         curr_state <= IDLE;
+                        mult_en <= '0';
                     elsif rising_edge(clk) then
                         curr_state <= next_state;
                         -- Enable modular multiplication when switching states
@@ -305,5 +302,57 @@ SynchProc   : process (reset_n, clk)
                         end if;
                     end if;
                 end process SynchProc;
+                
+                
+i_Proc :    process(reset_n, clk, next_state,curr_state)
+                begin 
+                    if (reset_n = '0') then
+                        i <= to_unsigned(85,7);
+                    elsif (rising_edge(clk) and next_state = SQUARE1 and curr_state /= SQUARE1) then
+                        i <= i - 1;
+                    end if;
+                end process i_Proc;
+                
+                
+f_i_Proc :  process(reset_n, clk, curr_state,i)
+                begin 
+                    if (reset_n = '0') then
+                        f_i <= (others => '0');
+                    elsif (rising_edge(clk) and curr_state = SQUARE1 and TO_INTEGER(i) < 85) then
+                        f_i <= key((3*TO_INTEGER(i)+2) downto (3*TO_INTEGER(i)));
+                    end if;
+                end process f_i_Proc;
+                
+partial_res_Proc :  process(reset_n, clk,curr_state,next_state,key)
+                begin 
+                    if (reset_n = '0') then
+                        partial_res <= (others => '0');
+                    elsif rising_edge(clk) then
+                        if (curr_state = PRECALC7) then
+                            -- OCTAL METHOD INITIALIZATION
+                            if (key(255) = '1') then
+                                partial_res <= message;
+                            else
+                                partial_res <= (others => '0');
+                                partial_res(0) <= '1';
+                            end if;
+                        elsif (next_state /= curr_state and next_state /= DONE) then
+                            partial_res <= mult_out;
+                        end  if;
+                    end if;
+                end process partial_res_Proc;
+                
+pwr_message_Proc : process(reset_n, clk,curr_state,next_state,counter_precalc)
+                    begin
+                        if (reset_n = '0') then
+                            pwr_message <= (others => (others => '0'));
+                            counter_precalc <= (others => '0');
+                        elsif rising_edge(clk) then
+                            if (next_state /= curr_state and curr_state /= IDLE and counter_precalc < 7) then
+                                pwr_message(TO_INTEGER(counter_precalc)) <= mult_out;
+                                counter_precalc <= counter_precalc + 1;
+                            end if;                            
+                        end if;
+                    end process pwr_message_Proc;
 
 end expBehave;
