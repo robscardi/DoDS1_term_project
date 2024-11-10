@@ -2,10 +2,10 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-entity tb_exponentiation is
-end tb_exponentiation;
+entity exponentiation_tb is
+end exponentiation_tb;
 
-architecture test of tb_exponentiation is
+architecture test of exponentiation_tb is
     constant C_block_size : integer := 256;
     CONSTANT CLOCK_PERIOD : TIME := 10 ns;
     
@@ -28,6 +28,9 @@ architecture test of tb_exponentiation is
 begin
     -- Instantiate the Unit Under Test (UUT)
     uut: entity work.exponentiation
+--        generic map (
+--            C_block_size => C_block_size
+--        )
         port map (
             valid_in    => tb_valid_in,
             ready_in    => tb_ready_in,

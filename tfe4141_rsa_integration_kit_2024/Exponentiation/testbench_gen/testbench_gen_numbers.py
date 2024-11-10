@@ -30,13 +30,13 @@ def write_to_file(filename, key, modulus, messages_and_results):
     """Write key, modulus, messages, and their results to a file."""
     with open(filename, 'w') as f:
         # Write the key and modulus first
-        f.write(f"{key:x}\n")
-        f.write(f"{modulus:x}\n\n")
+        f.write(f"{key:0{64}x}\n")
+        f.write(f"{modulus:0{64}x}\n\n")
         
         # Write each message and its result
         for message, result in messages_and_results:
-            f.write(f"{message:x}\n")
-            f.write(f"{result:x}\n\n")
+            f.write(f"{message:0{64}x}\n")
+            f.write(f"{result:0{64}x}\n\n")
 
 def main():
     # Generate key and modulus
@@ -52,7 +52,7 @@ def main():
     messages_and_results = []
     for _ in range(num_messages):
         message = generate_256_bit_number()
-        while message < modulus :
+        while message > modulus :
             message = generate_256_bit_number()
         result = modular_exponentiation(message, key, modulus)
         messages_and_results.append((message, result))
