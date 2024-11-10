@@ -28,9 +28,6 @@ architecture test of tb_exponentiation is
 begin
     -- Instantiate the Unit Under Test (UUT)
     uut: entity work.exponentiation
-        generic map (
-            C_block_size => C_block_size
-        )
         port map (
             valid_in    => tb_valid_in,
             ready_in    => tb_ready_in,

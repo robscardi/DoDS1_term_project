@@ -93,7 +93,7 @@ ready_in <= not(is_active);
 
 CombProc : process(curr_state, input_en, key, message,i,nxt_i, partial_res, f_i, pwr_message, mult_en, mult_done,mult_out, ready_out)
     begin
-    
+        next_state <= IDLE;
         case curr_state is
             when IDLE =>
                 result <= (others => '0');
@@ -114,8 +114,7 @@ CombProc : process(curr_state, input_en, key, message,i,nxt_i, partial_res, f_i,
                         partial_res(0) <= '1';
                     end if;
                     next_state <= PRECALC1;
-                else
-                    next_state <= IDLE;
+
                 end if;
                 
             -- PRECALCULATION of (2**k)[modulus] for k from 1 to 7 (octal method requirement)   
@@ -128,6 +127,7 @@ CombProc : process(curr_state, input_en, key, message,i,nxt_i, partial_res, f_i,
                 if (mult_done = '1' and mult_en = '0') then
                     pwr_message(0) <= mult_out;
                     next_state <= PRECALC2;
+
                 end if;
                 
             when PRECALC2 =>
@@ -140,6 +140,7 @@ CombProc : process(curr_state, input_en, key, message,i,nxt_i, partial_res, f_i,
                 if (mult_done = '1' and mult_en = '0') then
                     pwr_message(1) <= mult_out;
                     next_state <= PRECALC3;
+
                 end if;
                 
             when PRECALC3 =>

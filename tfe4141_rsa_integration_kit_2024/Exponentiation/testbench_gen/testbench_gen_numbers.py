@@ -40,8 +40,10 @@ def write_to_file(filename, key, modulus, messages_and_results):
 
 def main():
     # Generate key and modulus
-    key = generate_256_bit_number()
     modulus = generate_256_bit_number()
+    key = generate_256_bit_number()
+    while(key > modulus):
+        key = generate_256_bit_number()
 
     # Specify the number of messages
     num_messages = test_length # Set your desired number here
@@ -50,6 +52,8 @@ def main():
     messages_and_results = []
     for _ in range(num_messages):
         message = generate_256_bit_number()
+        while message < modulus :
+            message = generate_256_bit_number()
         result = modular_exponentiation(message, key, modulus)
         messages_and_results.append((message, result))
 

@@ -20,7 +20,7 @@ ARCHITECTURE projecttb OF core_cluster_1_tb IS
     
 
     SIGNAL tb_rst   : STD_ULOGIC := '1';
-    SIGNAL tb_clk   : STD_ULOGIC := '0';
+    SIGNAL tb_clk   : STD_ULOGIC := '1';
     
     signal tb_message  : DATA := (others => '0');
     signal tb_key  : DATA := (others => '0');
@@ -28,7 +28,6 @@ ARCHITECTURE projecttb OF core_cluster_1_tb IS
 
     signal tb_mod_res  : DATA := (others => '0');
 
-    signal tb_enable_i      : STD_ULOGIC := '0';
     signal tb_output_valid  : STD_ULOGIC := '0';
     signal tb_valid_in      : STD_ULOGIC := '0';
     signal tb_ready_in      : STD_ULOGIC := '0';
@@ -45,13 +44,10 @@ ARCHITECTURE projecttb OF core_cluster_1_tb IS
     signal input_mod        : INTEGER                           := ( 302304 );
 
 
-    
-
-
     component core_cluster is
 	generic (
 		C_block_size    : integer := 256;
-        Cluster_Num     : positive := 10 
+        Cluster_Num     : positive := CLUSTER_NUM
 	);
 	port (
 		--input controll
@@ -82,8 +78,10 @@ ARCHITECTURE projecttb OF core_cluster_1_tb IS
 	);
     end component;
 
-    alias full_fifo_input is << signal .mod_mult_1_tb.core_cluster.full_fifo_input : STD_LOGIC >>;
-    alias full_fifo_output is << signal .mod_mult_1_tb.core_cluster.full_fifo_input : STD_LOGIC >>;
+    alias full_fifo_input   is << signal UUT.full_fifo_input : STD_LOGIC >>;
+    alias full_fifo_output  is << signal UUT.full_fifo_input : STD_LOGIC >>;
+    alias exp_out_valid_out is << signal UUT.exp_valid_out : STD_LOGIC_VECTOR(CLUSTER_NUM-1 downto 0) >>;
+    alias exp_out_valid_out_stable is << signal UUT.exp_valid_out_stable : STD_LOGIC_VECTOR(CLUSTER_NUM-1 downto 0) >>;
 
 begin
 
@@ -131,26 +129,51 @@ begin
 
     end process;
 
-    TEST_ROUTINE : process is
-        variable correct_res : unsigned(input_width-1 downto 0) := TO_UNSIGNED(0, input_width);
+    ALIAS_TEST_ROUTINE : process is
     begin
-
-        WAIT UNTIL tb_rst = '1';
-        tb_modulus  <= STD_ULOGIC_VECTOR(to_unsigned(input_mod, tb_modulus'length));
-        tb_key      <= STD_ULOGIC_VECTOR(to_unsigned(input_key, tb_key'length));
-        
-        for i in  CLUSTER_NUM-1 downto 0 loop
-            WAIT UNTIL rising_edge(tb_clk);
-            tb_enable_i <= '1';
-            WAIT UNTIL rising_edge(tb_clk);
-            tb_enable_i <= '0';
-            WAIT UNTIL tb_output_valid = '1';
-            assert tb_mod_res = STD_ULOGIC_VECTOR(correct_res)
-                report "FAILED AT ITERATION " & integer'image(i) &  " UUT result: " & integer'image(to_integer(unsigned(tb_mod_res))) & "\n CORRECT result: " & integer'image(to_integer(correct_res))
-                severity failure;
-        end loop;
-        WAIT UNTIL rising_edge(tb_clk);
-        assert false report "TEST SUCCESSFULL" severity failure;
+       wait until tb_rst = '0'; 
+       wait until tb_rst = '1';
+       wait until (full_fifo_input = '1');
+            report "full_fifo_input = 1";
+       wait until (full_fifo_output = '1');
+            report "full_fifo_output = 1";
+       wait;
     end process;
 
+
+    TEST_ROUTINE : process is
+        variable counter : integer := 0;
+        variable i : integer := 0;
+    begin
+        WAIT until tb_rst = '0';
+        WAIT until tb_rst = '1';
+        tb_modulus  <= STD_ULOGIC_VECTOR(to_unsigned(input_mod, tb_modulus'length));
+        tb_key      <= STD_ULOGIC_VECTOR(to_unsigned(input_key, tb_key'length));
+        tb_ready_out <= '1';
+        while(i<input_message'length) loop
+            if (tb_ready_in = '1') then
+                tb_message <= STD_LOGIC_VECTOR(to_unsigned(input_message(i), input_width));
+                tb_valid_in <= '1'; 
+            end if;
+            if (i = input_message'length-1) then
+                tb_last_in <= '1';
+            end if;
+            i := i+1;
+            WAIT until rising_edge(tb_clk);
+        end loop;
+        tb_valid_in <= '0';
+        while(true) loop
+            WAIT UNTIL rising_edge(tb_clk);
+            if(tb_valid_out = '1') then
+                counter := counter +1;
+                report "output " & integer'image(counter) & " : " & integer'image(to_integer(unsigned(tb_result)));
+            end if;
+            if(tb_last_out = '1') then
+                assert counter = input_message'length -1;
+                    report "FAILED: found " & integer'image(counter) & " output from " & integer'image(input_message'length) &" input"
+                    severity failure;
+                assert false report "TEST SUCCESSFULL" severity failure;
+            end if;
+        end loop;            
+    end process;
 end architecture;
