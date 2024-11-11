@@ -43,6 +43,8 @@ architecture bhv of core_cluster is
     signal fifo_input : FIFO;       -- stores the input messages
     signal fifo_out   : FIFO;       -- stores the results
     
+    signal exp_result : FIFO;
+
     signal exp_valid_out    : STD_LOGIC_VECTOR(Cluster_Num-1 downto 0); -- <- exponentiation_inst(i).valid_out 
     signal exp_valid_in     : STD_LOGIC_VECTOR(Cluster_Num-1 downto 0); -- <- exponentiation_inst(i).valid_in
     signal exp_ready_in     : STD_LOGIC_VECTOR(Cluster_Num-1 downto 0); -- <- exponentiation_inst(i).ready_in
@@ -52,6 +54,7 @@ architecture bhv of core_cluster is
     signal full_fifo_out        : STD_LOGIC;     -- 1 if #Cluster_Num messages have been processed
     signal output_completed     : STD_LOGIC;     
     signal counter_fifo_in : unsigned(log2c(Cluster_Num)-1 downto 0) := (others => '0');        
+    signal counter_gen_out : unsigned(log2c(Cluster_Num)-1 downto 0) := (others => '0');
 
     signal is_last              : STD_LOGIC_VECTOR(Cluster_Num-1 downto 0); -- (i) is 1 if the i-th message is the last
     
@@ -99,7 +102,7 @@ begin
             key => key,
             ready_out => fifo_out_ready(i),
             valid_out => exp_valid_out(i),
-            result => fifo_out(i),
+            result => exp_result(i),
             modulus => modulus,
             clk => clk,
             reset_n => reset_n
@@ -155,6 +158,7 @@ begin
                 if(output_completed = '0') then
                     if(exp_valid_out(i) = '1') then
                         exp_valid_out_stable(i) <= '1';
+                        fifo_out(i) <= exp_result(i);
                         fifo_out_ready(i) <= '0';
                     end if;
                 else
@@ -176,35 +180,36 @@ begin
 
 
     OUTPUT : process (clk, reset_n)
-        variable counter : unsigned(log2c(Cluster_Num)-1 downto 0) := (others => '0');
     begin
         if(reset_n = '0') then
-            counter := (others => '0');
+            counter_gen_out <= (others => '0');
             output_completed <= '0';
             result <= (others => '0');
             last_msg_out <= '0';
+            valid_out <= '0';
         elsif(rising_edge(clk)) then 
+            last_msg_out <= '0';
+            valid_out <= '0';
             if(full_fifo_out = '1') then
-                if(ready_out = '1') then
-                    result <= fifo_out(to_integer(counter));
-                    counter := counter +1;
-                    last_msg_out <= is_last(to_integer(counter));
-                end if;
-                if(to_integer(counter) = Cluster_Num or is_last(to_integer(counter)) = '1') then
+                result <= fifo_out(to_integer(counter_gen_out));
+                last_msg_out <= is_last(to_integer(counter_gen_out));
+                valid_out <= '1';
+                if(to_integer(counter_gen_out) = Cluster_Num or is_last(to_integer(counter_gen_out)) = '1') then
                     output_completed <= '1';
+                end if;
+                if(ready_out = '1') then
+                    counter_gen_out <= counter_gen_out +1;
+                else 
+                    counter_gen_out <= counter_gen_out;
                 end if;
             end if;
             if(output_completed = '1') then
-                counter := (others => '0');
+                counter_gen_out <= (others => '0');
                 output_completed <= '0';
                 result <= (others => '0');
             end if;
         end if;
-    
     end process;
-    
-    valid_out <= full_fifo_out;
-
 end architecture;
 
 

@@ -25,7 +25,7 @@ end modulus_multiplication;
 
 architecture blakley_serial of modulus_multiplication is
     signal partial_res          : STD_ULOGIC_VECTOR(C_BLOCK_SIZE-1 downto 0);
-    signal partial_sum          : STD_ULOGIC_VECTOR(C_BLOCK_SIZE-1 downto 0);
+    signal partial_sum          : STD_ULOGIC_VECTOR(C_BLOCK_SIZE+1 downto 0);
     signal partial_sum_ready    : STD_ULOGIC;
 
     signal partial_res_ready    : STD_ULOGIC;
@@ -37,18 +37,18 @@ architecture blakley_serial of modulus_multiplication is
     signal is_active            : STD_ULOGIC;
 
     
-    pure function module_blakley (input: STD_ULOGIC_VECTOR(C_BLOCK_SIZE-1 downto 0); modulus: STD_ULOGIC_VECTOR(C_BLOCK_SIZE-1 downto 0) ) return STD_ULOGIC_VECTOR is
+    pure function module_blakley (input: STD_ULOGIC_VECTOR(C_BLOCK_SIZE+1 downto 0); modulus: STD_ULOGIC_VECTOR(C_BLOCK_SIZE-1 downto 0) ) return STD_ULOGIC_VECTOR is
 
-        variable first_sub      : signed(C_BLOCK_SIZE downto 0 );
-        variable second_sub     : signed(C_BLOCK_SIZE downto 0 );
+        variable first_sub      : signed(C_BLOCK_SIZE+2 downto 0 );
+        variable second_sub     : signed(C_BLOCK_SIZE+2 downto 0 );
 
     begin
-        first_sub   := signed('0' & input) - signed('0' & modulus);
-        second_sub  := signed('0' & input) - signed('0' & shift_left(unsigned(modulus), 1)); 
+        first_sub   := signed('0' & input) - signed("000" & modulus);
+        second_sub  := signed('0' & input) - signed("00" & modulus & '0'); 
         
-                if (first_sub(C_BLOCK_SIZE) = '1') then
-                    return input;
-                elsif(second_sub(C_BLOCK_SIZE) = '1') then
+                if (first_sub(C_BLOCK_SIZE+2) = '1') then
+                    return input(C_BLOCK_SIZE-1 downto 0);
+                elsif(second_sub(C_BLOCK_SIZE+2) = '1') then
                     return STD_ULOGIC_VECTOR(first_sub(C_BLOCK_SIZE-1 downto 0));
                 else
                     return STD_ULOGIC_VECTOR(second_sub(C_BLOCK_SIZE-1 downto 0));
@@ -124,9 +124,9 @@ begin
     elsif (rising_edge(clk)) then
         if(partial_res_ready = '1' and is_active = '1') then
             if (a_r(C_BLOCK_SIZE-1) = '1') then
-                partial_sum <= STD_ULOGIC_VECTOR(shift_left(unsigned(partial_res),1) + unsigned(b_r));
+                partial_sum <= STD_ULOGIC_VECTOR(unsigned('0' & partial_res & '0') + unsigned("00" & b_r));
             else
-                partial_sum <= STD_ULOGIC_VECTOR(shift_left(unsigned(partial_res),1)); 
+                partial_sum <= '0' & partial_res & '0'; 
             end if;
             partial_sum_ready <= '1';
             partial_res_ready <= '0';

@@ -4,17 +4,14 @@ USE ieee.numeric_std.ALL;
 USE ieee.std_logic_unsigned.ALL;
 USE std.textio.ALL;
 
-ENTITY mod_mult_1_tb IS
-END mod_mult_1_tb;
+ENTITY mod_mult_2_tb IS
+END mod_mult_2_tb;
 
-ARCHITECTURE projecttb OF mod_mult_1_tb IS
+ARCHITECTURE projecttb OF mod_mult_2_tb IS
     
     CONSTANT CLOCK_PERIOD : TIME := 10 ns;
     CONSTANT input_width : POSITIVE := 256;
-    CONSTANT scenario_length : POSITIVE := 2;
     CONSTANT RESET_TIME     : TIME := 2*CLOCK_PERIOD;
-
-    type num_array is array (natural range<>) of integer;
 
     SIGNAL tb_rst   : STD_ULOGIC := '1';
     SIGNAL tb_clk   : STD_ULOGIC := '0';
@@ -28,11 +25,8 @@ ARCHITECTURE projecttb OF mod_mult_1_tb IS
     signal tb_enable_i     : STD_ULOGIC := '0';
     signal tb_output_valid : STD_ULOGIC := '0';
 
-    -- SCENARIO SIGNALS
-    signal input_a_scenario     : num_array(scenario_length-1 downto 0) := ( 0 => 3649, 1 => 2345);
-    signal input_b_scenario     : num_array(scenario_length-1 downto 0) := ( 0 => 2753, 1 => 8493 );
-    signal input_mod_scenario   : num_array(scenario_length-1 downto 0) := ( 0 => 28097, 1 => 13984);
-
+    file input_file: text open read_mode is "modulus_multiplication_2_tb.txt";
+    
     component modulus_multiplication is
         generic(
             C_block_size : integer := 256
@@ -88,40 +82,42 @@ begin
 
     TEST_ROUTINE : process is
         variable correct_res : unsigned(input_width-1 downto 0) := TO_UNSIGNED(0, input_width);
+        variable line_in : line;
+        variable var_tb_mod     : STD_ULOGIC_VECTOR(input_width-1 downto 0) := (others => '0'); 
+        variable var_tb_a       : STD_ULOGIC_VECTOR(input_width-1 downto 0) := (others => '0'); 
+        variable var_tb_b       : STD_ULOGIC_VECTOR(input_width-1 downto 0) := (others => '0');
+        variable var_tb_result  : STD_ULOGIC_VECTOR(input_width-1 downto 0) := (others => '0');
+        variable i : INTEGER := 0; 
     begin
-
         WAIT UNTIL tb_rst = '1';
         
-                    -- extra manual test
-        WAIT UNTIL rising_edge(tb_clk);
-        tb_input_a <= x"76e38fd657e8b6db8f7d173f2cc198a5cd02657c45d264c8629015c4b22ec17e";
-        tb_input_b <= x"76e38fd657e8b6db8f7d173f2cc198a5cd02657c45d264c8629015c4b22ec17e";
-        tb_modulus <= x"b0f76b9c82af81aaf51f3dc145c3faf5c40841144b4772616411aa362640f1ce";
+        readline(input_file, line_in);
+        hread(line_in, var_tb_mod);
+        tb_modulus <= var_tb_mod;
 
-        tb_enable_i <= '1';
-        WAIT UNTIL rising_edge(tb_clk);
-        tb_enable_i <= '0';
-        WAIT UNTIL tb_output_valid = '1';
-        assert tb_mod_res = x"4af2b939936c08bcf01fe032cb9e930dac5517ad2b8428ec5e60cd50735b9e60"
-            report "FAILED AT LAST ITERATION \n" &  " UUT result: " & positive'image(to_integer(unsigned(tb_mod_res))) & "\n CORRECT result: 4af2b939936c08bcf01fe032cb9e930dac5517ad2b8428ec5e60cd50735b9e60"
-            severity failure;
-
-        
-        for i in  scenario_length-1 downto 0 loop
+        while not ENDFILE(input_file) loop
             WAIT UNTIL rising_edge(tb_clk);
-            tb_input_a <= STD_ULOGIC_VECTOR(TO_UNSIGNED(input_a_scenario(i), input_width));
-            tb_input_b <= STD_ULOGIC_VECTOR(TO_UNSIGNED(input_b_scenario(i), input_width));
-            tb_modulus <= STD_ULOGIC_VECTOR(TO_UNSIGNED(input_mod_scenario(i), input_width));
+
+            readline(input_file, line_in);
+            hread(line_in, var_tb_a);
+            readline(input_file, line_in);
+            hread(line_in, var_tb_b);
+
+            tb_input_a <= var_tb_a;
+            tb_input_b <= var_tb_b;
             tb_enable_i <= '1';
             WAIT UNTIL rising_edge(tb_clk);
             tb_enable_i <= '0';
             WAIT UNTIL tb_output_valid = '1';
-            correct_res := TO_UNSIGNED((input_a_scenario(i) * input_b_scenario(i)) mod input_mod_scenario(i), input_width);
-            assert tb_mod_res = STD_ULOGIC_VECTOR(correct_res)
+            
+            readline(input_file, line_in);
+            hread(line_in, var_tb_result);
+            i := i+1;
+
+            assert tb_mod_res = var_tb_result
                 report "FAILED AT ITERATION " & integer'image(i) &  " UUT result: " & integer'image(to_integer(unsigned(tb_mod_res))) & "\n CORRECT result: " & integer'image(to_integer(correct_res))
                 severity failure;
         end loop;
-
         WAIT UNTIL rising_edge(tb_clk);
         assert false report "TEST SUCCESSFULL" severity failure;
     end process;

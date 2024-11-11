@@ -78,10 +78,10 @@ ARCHITECTURE projecttb OF core_cluster_1_tb IS
 	);
     end component;
 
-    alias full_fifo_input   is << signal UUT.full_fifo_input : STD_LOGIC >>;
-    alias full_fifo_output  is << signal UUT.full_fifo_input : STD_LOGIC >>;
-    alias exp_out_valid_out is << signal UUT.exp_valid_out : STD_LOGIC_VECTOR(CLUSTER_NUM-1 downto 0) >>;
-    alias exp_out_valid_out_stable is << signal UUT.exp_valid_out_stable : STD_LOGIC_VECTOR(CLUSTER_NUM-1 downto 0) >>;
+    alias full_fifo_input       is << signal UUT.full_fifo_input : STD_LOGIC >>;
+    alias full_fifo_output      is << signal UUT.full_fifo_out : STD_LOGIC >>;
+    alias exp_valid_out         is << signal UUT.exp_valid_out : STD_LOGIC_VECTOR(CLUSTER_NUM-1 downto 0) >>;
+    alias exp_valid_out_stable  is << signal UUT.exp_valid_out_stable : STD_LOGIC_VECTOR(CLUSTER_NUM-1 downto 0) >>;
 
 begin
 
@@ -117,8 +117,7 @@ begin
             last_msg_in => tb_last_in,
             last_msg_out => tb_last_out
 
-        );
-
+        );        
     RESET_PROC : process is
     begin
         wait for RESET_TIME;
@@ -129,7 +128,19 @@ begin
 
     end process;
 
-    ALIAS_TEST_ROUTINE : process is
+    ALIAS_TEST_ROUTINE_EXP_DONE : process is
+    begin
+
+        wait until tb_rst = '0';
+        wait until tb_rst = '1';
+        while(true) loop
+            wait until not exp_valid_out = "0000";
+                report "exp_out_valid = " & to_string(exp_valid_out);
+                report "exp_out_valid_stable = " & to_string(exp_valid_out_stable); 
+        end loop;
+    end process;    
+
+    ALIAS_TEST_ROUTINE_FIFO : process is
     begin
        wait until tb_rst = '0'; 
        wait until tb_rst = '1';
@@ -169,7 +180,7 @@ begin
                 report "output " & integer'image(counter) & " : " & integer'image(to_integer(unsigned(tb_result)));
             end if;
             if(tb_last_out = '1') then
-                assert counter = input_message'length -1;
+                assert (counter = input_message'length)
                     report "FAILED: found " & integer'image(counter) & " output from " & integer'image(input_message'length) &" input"
                     severity failure;
                 assert false report "TEST SUCCESSFULL" severity failure;

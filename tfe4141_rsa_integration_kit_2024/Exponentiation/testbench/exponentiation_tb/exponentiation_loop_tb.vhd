@@ -15,11 +15,11 @@ architecture Behavioral of exponentiation_loop_tb is
     CONSTANT CLOCK_PERIOD : TIME := 10 ns;
     
     -- Input signals to DUT
-    signal tb_valid_in     : std_ulogic;
+    signal tb_valid_in     : std_ulogic := '0';
     signal tb_ready_in     : std_ulogic;
-    signal tb_message      : std_ulogic_vector(C_block_size-1 downto 0);
-    signal tb_key          : std_ulogic_vector(C_block_size-1 downto 0);
-    signal tb_modulus      : std_ulogic_vector(C_block_size-1 downto 0);
+    signal tb_message      : std_ulogic_vector(C_block_size-1 downto 0) := (others => '0');
+    signal tb_key          : std_ulogic_vector(C_block_size-1 downto 0) := (others => '0');
+    signal tb_modulus      : std_ulogic_vector(C_block_size-1 downto 0) := (others => '0');
 
     -- Output signals from DUT
     signal tb_ready_out    : std_ulogic := '1';
@@ -65,13 +65,19 @@ begin
         variable line_count : integer := 0;   
 
     begin
+
         file_open(txt_file, "exponentiation_loop_tb.txt", read_mode);
+            
+            tb_reset_n <= '0';   
+            wait for 2*CLOCK_PERIOD;   
+            tb_reset_n <= '1';   
+            wait for 1*CLOCK_PERIOD;
             while not endfile(txt_file) loop
-            readline(txt_file, line_data);
-            hread(line_data, hex_string);
-            wait for 10 ns;
-            -- Skip blank lines
-           if hex_string(0) /= 'U' then
+                readline(txt_file, line_data);
+                hread(line_data, hex_string);
+                wait for CLOCK_PERIOD;
+                -- Skip blank lines
+            if hex_string(0) /= 'U' then
                 case line_count is
                     when 0 =>
                         -- First line: assign to key
@@ -84,16 +90,12 @@ begin
                             tb_message <= hex_string;
                         else
                             correct_res <= hex_string;
-                            tb_reset_n <= '0';   
-                            wait for 20 ns;   
-                            tb_reset_n <= '1';   
-                            wait for 10 ns;
                             tb_valid_in <= '1';
                             WAIT UNTIL tb_valid_out = '1';
                             tb_valid_in <= '0';
                             assert correct_res = tb_result
                                 report "TEST FAILED" severity failure;
-            end if;
+                        end if;
                 end case;
                 -- Increment line count
                 line_count := line_count + 1;
