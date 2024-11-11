@@ -305,7 +305,7 @@ SynchProc   : process (reset_n, clk,next_state,curr_state)
                 
 i_Proc :    process(reset_n, clk, next_state,curr_state)
                 begin 
-                    if (reset_n = '0') then
+                    if (reset_n = '0' or curr_state = IDLE) then
                         i <= to_unsigned(85,7);
                     elsif (rising_edge(clk) and next_state = SQUARE1 and curr_state /= SQUARE1) then
                         i <= i - 1;
@@ -315,7 +315,7 @@ i_Proc :    process(reset_n, clk, next_state,curr_state)
                 
 f_i_Proc :  process(reset_n, clk, curr_state,i)
                 begin 
-                    if (reset_n = '0') then
+                    if (reset_n = '0' or curr_state = IDLE) then
                         f_i <= (others => '0');
                     elsif (rising_edge(clk) and curr_state = SQUARE1 and TO_INTEGER(i) < 85) then
                         f_i <= key((3*TO_INTEGER(i)+2) downto (3*TO_INTEGER(i)));
@@ -324,7 +324,7 @@ f_i_Proc :  process(reset_n, clk, curr_state,i)
                 
 partial_res_Proc :  process(reset_n, clk,curr_state,next_state,key)
                 begin 
-                    if (reset_n = '0') then
+                    if (reset_n = '0' or curr_state = IDLE) then
                         partial_res <= (others => '0');
                     elsif rising_edge(clk) then
                         if (curr_state = PRECALC7) then
@@ -343,7 +343,7 @@ partial_res_Proc :  process(reset_n, clk,curr_state,next_state,key)
                 
 pwr_message_Proc : process(reset_n, clk,curr_state,next_state,counter_precalc)
                     begin
-                        if (reset_n = '0') then
+                        if (reset_n = '0' or curr_state = IDLE) then
                             pwr_message <= (others => (others => '0'));
                             counter_precalc <= (others => '0');
                         elsif rising_edge(clk) then
