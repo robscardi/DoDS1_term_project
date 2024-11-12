@@ -59,6 +59,8 @@ architecture bhv of core_cluster is
     signal is_last              : STD_LOGIC_VECTOR(Cluster_Num-1 downto 0); -- (i) is 1 if the i-th message is the last
     
     signal exp_valid_out_stable : STD_LOGIC_VECTOR(Cluster_Num-1 downto 0) := (others => '0'); -- counter for FILL_FIFO_IN process
+
+    signal fin_reset            : STD_ULOGIC;
     component exponentiation is
 	generic (
 		C_block_size : integer := 256
@@ -111,9 +113,9 @@ begin
     end generate;
 
     
-    FILL_FIFO_IN_PROC : process (clk, reset_n)
+    FILL_FIFO_IN_PROC : process (clk, reset_n, fin_reset)
     begin
-        if(reset_n = '0') then
+        if(reset_n = '0' or fin_reset = '1') then
             counter_fifo_in <= (others => '0');
             fifo_input <= (others => (others => '0'));  
             full_fifo_input <= '0';
@@ -121,10 +123,8 @@ begin
             is_last <= (others => '0');
             exp_valid_in <= (others => '0'); 
         elsif(rising_edge(clk)) then 
-            if(full_fifo_input = '0') then
-                ready_in <= '1';
-            else
-                ready_in <= '0';
+            if(full_fifo_input = '1') then
+                exp_valid_in <= (others => '0'); 
             end if;
             if(valid_in = '1' and full_fifo_input = '0') then
                 fifo_input(to_integer(counter_fifo_in)) <= message;
@@ -137,6 +137,7 @@ begin
             end if;
             if (counter_fifo_in = TO_UNSIGNED(Cluster_Num-1, counter_fifo_in'length)) then
                 full_fifo_input <= '1';
+                ready_in <= '0';
             end if;
             if (output_completed = '1') then
                 counter_fifo_in <= (others => '0');
@@ -149,11 +150,12 @@ begin
     end process;
 
     GENERATE_FIFO_OUT_READY : for i in Cluster_Num-1 downto 0 generate
-        process (clk, reset_n)
+        process (clk, reset_n, fin_reset)
         begin
-            if reset_n = '0' then
+            if reset_n = '0' or fin_reset = '1' then
                 exp_valid_out_stable(i) <= '0'; 
-                fifo_out_ready(i) <= '1' ; 
+                fifo_out_ready(i) <= '1' ;
+                fifo_out(i) <= (others => '0') ; 
             elsif rising_edge(clk) then
                 if(output_completed = '0') then
                     if(exp_valid_out(i) = '1') then
@@ -169,24 +171,24 @@ begin
         end process;
     end generate;
 
-    FULL_FIFO_OUT_PROC : process (clk, reset_n)
+    FULL_FIFO_OUT_PROC : process (clk, reset_n, fin_reset)
     begin
-        if(reset_n = '0') then
+        if(reset_n = '0' or fin_reset = '1') then
             full_fifo_out <= '0';
         elsif rising_edge(clk) then
             full_fifo_out <= and exp_valid_out_stable;
         end if;
     end process;
 
-
-    OUTPUT : process (clk, reset_n)
+    OUTPUT : process (clk, reset_n, fin_reset)
     begin
-        if(reset_n = '0') then
+        if(reset_n = '0' or fin_reset = '1') then
             counter_gen_out <= (others => '0');
             output_completed <= '0';
             result <= (others => '0');
             last_msg_out <= '0';
             valid_out <= '0';
+            fin_reset <= '0';
         elsif(rising_edge(clk)) then 
             last_msg_out <= '0';
             valid_out <= '0';
@@ -194,7 +196,7 @@ begin
                 result <= fifo_out(to_integer(counter_gen_out));
                 last_msg_out <= is_last(to_integer(counter_gen_out));
                 valid_out <= '1';
-                if(to_integer(counter_gen_out) = Cluster_Num or is_last(to_integer(counter_gen_out)) = '1') then
+                if(to_integer(counter_gen_out) = Cluster_Num-1 or is_last(to_integer(counter_gen_out)) = '1') then
                     output_completed <= '1';
                 end if;
                 if(ready_out = '1') then
@@ -204,9 +206,7 @@ begin
                 end if;
             end if;
             if(output_completed = '1') then
-                counter_gen_out <= (others => '0');
-                output_completed <= '0';
-                result <= (others => '0');
+                fin_reset <= '1';
             end if;
         end if;
     end process;
