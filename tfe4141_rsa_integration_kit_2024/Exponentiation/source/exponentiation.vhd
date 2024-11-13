@@ -93,7 +93,7 @@ ready_in <= not(is_active);
 
 
 
-CombProc : process(curr_state, input_en, key, message,i, partial_res, f_i, mult_en, mult_done,mult_out, ready_out)
+CombProc : process(curr_state, input_en, key, message,i, partial_res, f_i, mult_en, mult_done,mult_out, ready_out, pwr_message)
     begin
         next_state <= IDLE;
         case curr_state is

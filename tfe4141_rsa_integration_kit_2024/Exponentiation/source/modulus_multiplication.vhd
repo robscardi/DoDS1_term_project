@@ -105,7 +105,7 @@ begin
     end if;
 end process;
 
-IS_ACTIVE_PROC : process (clk, reset_n, enable_i)
+IS_ACTIVE_PROC : process (clk, reset_n, enable_i, counter)
 begin
     if( reset_n = '0' or counter = C_BLOCK_SIZE+1) then
         is_active <= '0';
@@ -114,7 +114,7 @@ begin
     end if;
 end process;
 
-PARTIAL_SUM_PROC : process ( clk, reset_n, counter)
+PARTIAL_SUM_PROC : process ( clk, reset_n, counter, enable_i)
 begin
     if(reset_n = '0' or enable_i = '1')  then
         partial_res <= (others => '0');

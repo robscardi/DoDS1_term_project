@@ -56,10 +56,10 @@ architecture bhv of core_cluster is
     signal counter_fifo_in : unsigned(log2c(Cluster_Num)-1 downto 0) := (others => '0');        
     signal counter_gen_out : unsigned(log2c(Cluster_Num)-1 downto 0) := (others => '0');
 
-    signal is_last              : STD_LOGIC_VECTOR(Cluster_Num-1 downto 0); -- (i) is 1 if the i-th message is the last
+    signal is_last              : STD_LOGIC_VECTOR(Cluster_Num-1 downto 0) := (others => '0'); -- (i) is 1 if the i-th message is the last
     
     signal exp_valid_out_stable : STD_LOGIC_VECTOR(Cluster_Num-1 downto 0) := (others => '0'); -- counter for FILL_FIFO_IN process
-
+    constant ground_CN          : STD_LOGIC_VECTOR(Cluster_Num-1 downto 0) := (others => '0');
     signal fin_reset            : STD_ULOGIC;
     component exponentiation is
 	generic (
@@ -132,6 +132,7 @@ begin
                 if (last_msg_in = '1') then
                     is_last(to_integer(counter_fifo_in)) <= '1';
                     full_fifo_input <= '1';
+                    ready_in <= '0';
                 end if;
                 counter_fifo_in <= counter_fifo_in +1;
             end if;
@@ -181,29 +182,37 @@ begin
     end process;
 
     OUTPUT : process (clk, reset_n, fin_reset)
+        variable counter : unsigned(log2c(Cluster_Num)-1 downto 0) := (others => '0'); 
+        variable end_condition : boolean := false;
     begin
+        counter_gen_out <= counter;
         if(reset_n = '0' or fin_reset = '1') then
-            counter_gen_out <= (others => '0');
             output_completed <= '0';
             result <= (others => '0');
             last_msg_out <= '0';
             valid_out <= '0';
             fin_reset <= '0';
+            counter := (others => '0');
+            end_condition := false; 
         elsif(rising_edge(clk)) then 
             last_msg_out <= '0';
             valid_out <= '0';
-            if(full_fifo_out = '1') then
-                result <= fifo_out(to_integer(counter_gen_out));
-                last_msg_out <= is_last(to_integer(counter_gen_out));
+            
+            if(full_fifo_out = '1' or ((is_last and exp_valid_out_stable) /= ground_CN)) then
                 valid_out <= '1';
-                if(to_integer(counter_gen_out) = Cluster_Num-1 or is_last(to_integer(counter_gen_out)) = '1') then
-                    output_completed <= '1';
-                end if;
-                if(ready_out = '1') then
-                    counter_gen_out <= counter_gen_out +1;
+                end_condition := to_integer(counter) = Cluster_Num-1 or is_last(to_integer(counter)) = '1';
+                if(ready_out = '1' and valid_out = '1') then
+                    counter := counter +1; 
+                    if(end_condition) then
+                        output_completed <= '1';
+                        valid_out <= '0';
+                    end if;
                 else 
-                    counter_gen_out <= counter_gen_out;
+                    counter := counter;
                 end if;
+                result <= fifo_out(to_integer(counter));
+                last_msg_out <= is_last(to_integer(counter));
+ 
             end if;
             if(output_completed = '1') then
                 fin_reset <= '1';
