@@ -26,9 +26,6 @@ ARCHITECTURE projecttb OF core_cluster_1_tb IS
     signal tb_key  : DATA := (others => '0');
     signal tb_modulus  : DATA := (others => '0');
 
-    signal tb_mod_res  : DATA := (others => '0');
-
-    signal tb_output_valid  : STD_ULOGIC := '0';
     signal tb_valid_in      : STD_ULOGIC := '0';
     signal tb_ready_in      : STD_ULOGIC := '0';
     signal tb_ready_out     : STD_ULOGIC := '0';

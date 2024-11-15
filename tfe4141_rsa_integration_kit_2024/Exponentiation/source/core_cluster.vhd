@@ -37,7 +37,6 @@ end core_cluster;
 
 architecture bhv of core_cluster is
 
-    subtype DATA is STD_ULOGIC_VECTOR(C_BLOCK_SIZE-1 downto 0);
     type FIFO is array(Cluster_Num-1 downto 0) of STD_ULOGIC_VECTOR(C_BLOCK_SIZE-1 downto 0);
 
     signal fifo_input : FIFO;       -- stores the input messages

@@ -1,10 +1,10 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
-entity exponentiation_tb is
-end exponentiation_tb;
+entity exponentiation_2_tb is
+end exponentiation_2_tb;
 
-architecture test of exponentiation_tb is
+architecture test of exponentiation_2_tb is
     constant C_block_size : integer := 256;
     CONSTANT CLOCK_PERIOD : TIME := 10 ns;
     
@@ -23,6 +23,10 @@ architecture test of exponentiation_tb is
     -- Clock and Reset
     signal tb_clk          : std_ulogic := '0';
     signal tb_reset_n      : std_ulogic := '1';
+    constant key_e : STD_ULOGIC_VECTOR(C_BLOCK_SIZE-1 downto 0) := x"0000000000000000000000000000000000000000000000000000000000010001";
+    constant key_d : STD_ULOGIC_VECTOR(C_BLOCK_SIZE-1 downto 0) := x"0cea1651ef44be1f1f1476b7539bed10d73e3aac782bd9999a1e5a790932bfe9";
+    constant key_n : STD_ULOGIC_VECTOR(C_BLOCK_SIZE-1 downto 0) := x"99925173ad65686715385ea800cd28120288fc70a9bc98dd4c90d676f8ff768d";
+    constant mess  : STD_ULOGIC_VECTOR(C_BLOCK_SIZE-1 downto 0) := x"8888888899999999aaaaaaaabbbbbbbbccccccccddddddddeeeeeeeeffffffff";
 begin
     -- Instantiate the Unit Under Test (UUT)
     uut: entity work.exponentiation
@@ -52,6 +56,7 @@ begin
     -- Stimulus process
     Stimulus : process
             variable correct_res : unsigned(C_block_size-1 downto 0) := (others => '0');
+            variable intermediate : STD_ULOGIC_VECTOR(c_block_size-1 downto 0) := (others => '0'); 
     begin
         -- Initialize inputs
         tb_reset_n <= '0';   
@@ -60,9 +65,9 @@ begin
         wait for CLOCK_PERIOD;
         
         --Use hexadecimal writing to represent large numbers
-        tb_message <= x"045ccbeea1f34185c93d9a08bed7f95b54155c689b9e07e176436811e28ca894";
-        tb_key <= x"123d8009581fcb68bb3c23f5ee33a3ef2a59080d73e0f9a97a2eee84daa7a960";
-        tb_modulus <= x"2130ffe07897762cc37a9c7d5268559f4b0a6b9d3329d8bb1713ee8ab6cf91c7";
+        tb_message <= mess;
+        tb_key <= key_e;
+        tb_modulus <= key_n;
         wait for CLOCK_PERIOD;
         
         assert unsigned(tb_message) < unsigned(tb_modulus) 
@@ -72,12 +77,21 @@ begin
             
         tb_valid_in <= '1';
         WAIT UNTIL tb_valid_out = '1';
+        intermediate := tb_result;
         tb_valid_in <= '0';
-        
+        wait until rising_edge(tb_clk);
+        tb_message <= intermediate;
+        tb_key <= key_d;
+        report "intermediate : " & integer'image(to_integer(unsigned(intermediate))) severity NOTE;
+        assert unsigned(tb_message) < unsigned(tb_modulus) 
+            report "MESSAGE SHOULD BE SMALLER THAN MODULUS" severity failure;
+        assert unsigned(tb_key) < unsigned(tb_modulus)
+            report "KEY SHOULD BE SMALLER THAN MODULUS" severity failure;
+
         --Compute correct result with Python using pow(message,key,modulus)
-        correct_res := x"13df3bb55f156c1354ce75d743b1ce34cf4c64c7eb35c2870aa2517a7e088a2a";
+        correct_res := UNSIGNED(mess);
         assert tb_result = std_ulogic_vector(correct_res)
-            report "TEST FAILED" severity failure;
+            report "TEST FAILED : result = " & INTEGER'image(to_integer(unsigned(tb_result))) & " correct = " & INTEGER'image(to_integer(unsigned(mess)))  severity failure;
         WAIT UNTIL rising_edge(tb_clk);
         assert false report "TEST SUCCESSFUL" severity failure;
     end process;

@@ -41,38 +41,6 @@ ARCHITECTURE projecttb OF core_cluster_1_tb_synth IS
     signal input_key        : INTEGER                           := ( 1230   );
     signal input_mod        : INTEGER                           := ( 302304 );
 
-
-    component core_cluster is
-	port (
-		--input controll
-		valid_in	: in STD_ULOGIC;
-		ready_in	: out STD_ULOGIC;
-
-		--input data
-		message 	: in STD_ULOGIC_VECTOR ( input_width-1 downto 0 );
-		key 		: in STD_ULOGIC_VECTOR ( input_width-1 downto 0 );
-
-		--ouput controll
-		ready_out	: in STD_ULOGIC;
-		valid_out	: out STD_ULOGIC;
-
-		--output data
-		result 		: out STD_ULOGIC_VECTOR(input_width-1 downto 0);
-
-		--modulus
-		modulus 	: in STD_ULOGIC_VECTOR(input_width-1 downto 0);
-
-		--utility
-		clk 		: in STD_ULOGIC;
-		reset_n 	: in STD_ULOGIC;
-
-        last_msg_in    : in STD_ULOGIC;
-        last_msg_out   : out STD_ULOGIC
-
-	);
-    end component;
-
-
 begin
 
     PROC_CLK : process is
