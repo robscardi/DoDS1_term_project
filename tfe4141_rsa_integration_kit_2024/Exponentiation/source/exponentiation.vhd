@@ -4,13 +4,14 @@ use ieee.numeric_std.all;
 library work;
 use work.math_utilities.all;
 
-
+-- Modular exponentiation using the Octal Method algorithm
+-- Works for 256 bits long inputs (would need some modifications to adapt it to any length)
 entity exponentiation is
 	generic (
 		C_block_size : integer := 256
 	);
 	port (
-		--input controll
+		--input control
 		valid_in	: in STD_ULOGIC;
 		ready_in	: out STD_ULOGIC;
 
@@ -18,7 +19,7 @@ entity exponentiation is
 		message 	: in STD_ULOGIC_VECTOR ( C_block_size-1 downto 0 );
 		key 		: in STD_ULOGIC_VECTOR ( C_block_size-1 downto 0 );
 
-		--ouput controll
+		--ouput control
 		ready_out	: in STD_ULOGIC;
 		valid_out	: out STD_ULOGIC;
 
@@ -38,6 +39,7 @@ end exponentiation;
 architecture expBehave of exponentiation is
     -- States for the state machine
     type state is (IDLE, PRECALC1, PRECALC2, PRECALC3, PRECALC4, PRECALC5, PRECALC6, PRECALC7, SQUARE1, SQUARE2, SQUARE3, MULTIPLY, DONE);
+    -- Array type to store 7 values during precalculation
     type pwr_message_array is array (0 to 6) of STD_ULOGIC_VECTOR(255 downto 0);
     signal curr_state           : state := IDLE;
     signal next_state           : state := IDLE;
@@ -88,11 +90,11 @@ begin
                 output_ready => mult_done
         );
         
-input_en <= valid_in and not(is_active);
+input_en <= valid_in and not(is_active); --Start signal
 ready_in <= not(is_active);
 
 
-
+--Main process
 CombProc : process(curr_state, input_en, key, message,i, partial_res, f_i, mult_en, mult_done,mult_out, ready_out, pwr_message)
     begin
         next_state <= IDLE;
@@ -101,15 +103,16 @@ CombProc : process(curr_state, input_en, key, message,i, partial_res, f_i, mult_
                 result <= (others => '0');
                 valid_out <= '0';
                 is_active <= '0';
-                --pwr_message <= (others => (others => '0'));
                 mult_a <= (others => '0');
                 mult_b <= (others => '0');
                 if (input_en = '1') then --START
                     next_state <= PRECALC1;
-
+                else
+                    next_state <= IDLE;
                 end if;
                 
-            -- PRECALCULATION of (2**k)[modulus] for k from 1 to 7 (octal method requirement)   
+            -- PRECALCULATION of (message**k)[modulus] for k from 1 to 7 (octal method requirement) 
+            -- 1 modular multiplication per state  
             when PRECALC1 =>
                 is_active <= '1';
                 result <= (others => '0');
@@ -117,10 +120,12 @@ CombProc : process(curr_state, input_en, key, message,i, partial_res, f_i, mult_
                 mult_a <= (others => '0');
                 mult_a(0) <= '1';
                 mult_b <= message;
+                -- Inputs are given to the mod_mult component
                 if (mult_done = '1' and mult_en = '0') then
-                    --pwr_message(0) <= mult_out;
+                    --Mod_mult ended
                     next_state <= PRECALC2;
                 else
+                    --Wait for the end of mod_mult
                     next_state <= PRECALC1;
                 end if;
                 
@@ -131,7 +136,6 @@ CombProc : process(curr_state, input_en, key, message,i, partial_res, f_i, mult_
                 mult_a <= partial_res;
                 mult_b <= partial_res;
                 if (mult_done = '1' and mult_en = '0') then
-                   -- pwr_message(1) <= mult_out;
                     next_state <= PRECALC3;
                 else
                     next_state <= PRECALC2;
@@ -144,7 +148,6 @@ CombProc : process(curr_state, input_en, key, message,i, partial_res, f_i, mult_
                 mult_a <= partial_res;
                 mult_b <= pwr_message(0);
                 if (mult_done = '1' and mult_en = '0') then
-                    --pwr_message(2) <= mult_out;
                     next_state <= PRECALC4;
                 else
                     next_state <= PRECALC3;
@@ -157,7 +160,6 @@ CombProc : process(curr_state, input_en, key, message,i, partial_res, f_i, mult_
                 mult_a <= partial_res;                
                 mult_b <= pwr_message(0);
                 if (mult_done = '1' and mult_en = '0') then
-                   -- pwr_message(3) <= mult_out;
                     next_state <= PRECALC5;
                 else
                     next_state <= PRECALC4;
@@ -170,7 +172,6 @@ CombProc : process(curr_state, input_en, key, message,i, partial_res, f_i, mult_
                 mult_a <= partial_res;                
                 mult_b <= pwr_message(0);
                 if (mult_done = '1' and mult_en = '0') then
-                    --pwr_message(4) <= mult_out;
                     next_state <= PRECALC6;
                 else
                     next_state <= PRECALC5;
@@ -183,7 +184,6 @@ CombProc : process(curr_state, input_en, key, message,i, partial_res, f_i, mult_
                 mult_a <= partial_res;                
                 mult_b <= pwr_message(0);
                 if (mult_done = '1' and mult_en = '0') then
-                   --pwr_message(5) <= mult_out;
                     next_state <= PRECALC7;
                 else
                     next_state <= PRECALC6;
@@ -196,18 +196,18 @@ CombProc : process(curr_state, input_en, key, message,i, partial_res, f_i, mult_
                 mult_a <= partial_res;
                 mult_b <= pwr_message(0);
                 if (mult_done = '1' and mult_en = '0') then
-                    --pwr_message(6) <= mult_out;
                     next_state <= SQUARE1;
                 else
                     next_state <= PRECALC7;
                 end if;                 
             
-            --For each block of 3 bits (f_i), elevate the partial result to power 8 (square 3 times)
+            --Precalculation is done
+            --For each block of 3 bits (f_i) in the key, elevate the partial result to power 8 (square 3 times)
             when SQUARE1 =>
                 is_active <= '1';
                 result <= (others => '0');
                 valid_out <= '0'; 
-                if (TO_INTEGER(i) < 100) then
+                if (TO_INTEGER(i) < 100) then -- Technically (if i < 0 then) but after 0 i gets to 127
                     mult_a <= partial_res;
                     mult_b <= partial_res;
                     if (mult_done = '1' and mult_en = '0') then
@@ -268,6 +268,7 @@ CombProc : process(curr_state, input_en, key, message,i, partial_res, f_i, mult_
                 mult_b <= (others => '0');
                 result <= partial_res;
                 valid_out <= '1';
+                --Wait for the outside component to be ready to receive the output
                 if (ready_out = '1') then
                     next_state <= IDLE;
                     valid_out <= '0';
@@ -286,6 +287,7 @@ CombProc : process(curr_state, input_en, key, message,i, partial_res, f_i, mult_
         end case;
     end process;
 
+-- Updates the state at each positive clock edge
 SynchProc   : process (reset_n, clk,next_state,curr_state)
                 begin
                     if (reset_n = '0') then
@@ -293,7 +295,7 @@ SynchProc   : process (reset_n, clk,next_state,curr_state)
                         mult_en <= '0';
                     elsif rising_edge(clk) then
                         curr_state <= next_state;
-                        -- Enable modular multiplication when switching states
+                        -- Enable modular multiplication for one clock cycle when switching states
                         if (next_state /= curr_state) then
                             mult_en <= '1';
                         else
@@ -302,7 +304,7 @@ SynchProc   : process (reset_n, clk,next_state,curr_state)
                     end if;
                 end process SynchProc;
                 
-                
+-- Keeps track of the counter during the main loop (SQUARE1-2-3-MULTIPLY)             
 i_Proc :    process(reset_n, clk, next_state,curr_state)
                 begin 
                     if (reset_n = '0' or curr_state = IDLE) then
@@ -312,7 +314,7 @@ i_Proc :    process(reset_n, clk, next_state,curr_state)
                     end if;
                 end process i_Proc;
                 
-                
+-- Keeps track of the current key 3-bits-group during the main loop                           
 f_i_Proc :  process(reset_n, clk, curr_state,i)
                 begin 
                     if (reset_n = '0' or curr_state = IDLE) then
@@ -321,7 +323,8 @@ f_i_Proc :  process(reset_n, clk, curr_state,i)
                         f_i <= key((3*TO_INTEGER(i)+2) downto (3*TO_INTEGER(i)));
                     end if;
                 end process f_i_Proc;
-                
+       
+--Stores the result of the last modular multiplication (which becomes the input of the next one)               
 partial_res_Proc :  process(reset_n, clk,curr_state,next_state,key)
                 begin 
                     if (reset_n = '0' or curr_state = IDLE) then
@@ -340,7 +343,8 @@ partial_res_Proc :  process(reset_n, clk,curr_state,next_state,key)
                         end  if;
                     end if;
                 end process partial_res_Proc;
-                
+
+--Fills the pwr_message array during the precalculation states                
 pwr_message_Proc : process(reset_n, clk,curr_state,next_state,counter_precalc)
                     begin
                         if (reset_n = '0' or curr_state = IDLE) then

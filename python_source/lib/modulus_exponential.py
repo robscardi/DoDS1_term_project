@@ -22,27 +22,23 @@ class OctalMethod(ModulusExponential):
         for k in range(6):
             M_wk = self.modMult(n,M,pwr_M[k])
             pwr_M.append(M_wk)
-        print('precalc', [k.get_value() for k in pwr_M])
-        
+
+        #Initialization
         if e.__getitem__(255) == 1:
             C = M
         else:
             C = BitVector.fromint(1, len(M))
-        print('C0 = ',C.get_value())
         i = 84
+
         while i >= 0:
             #C = C**8[n]
-            print('i = ',i)
-            assert C.get_value() < n.get_value()
             C = self.modMult(n,C,C)
             C = self.modMult(n,C,C)
             C = self.modMult(n,C,C)
-            print('C**8[n] = ',C.get_value())
             f_i = (e.__getitem__(3*i+2))*4 + (e.__getitem__(3*i+1))*2 + (e.__getitem__(3*i))
-            print('f_i = ',f_i)
+            #One more modular multiplication if the 3-bits key block is not 0
             if f_i > 0:
                 M_fi = pwr_M[f_i-1]
                 C = self.modMult(n,C,M_fi)
-                print('C = ',C.get_value())
             i -=1
         return C
