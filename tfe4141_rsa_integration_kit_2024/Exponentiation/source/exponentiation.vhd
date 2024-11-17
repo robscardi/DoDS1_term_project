@@ -93,7 +93,7 @@ ready_in <= not(is_active);
 
 
 
-CombProc : process(curr_state, input_en, key, message,i, partial_res, f_i, mult_en, mult_done,mult_out, ready_out)
+CombProc : process(curr_state, input_en, key, message,i, partial_res, f_i, mult_en, mult_done,mult_out, ready_out, pwr_message)
     begin
         next_state <= IDLE;
         case curr_state is
@@ -266,13 +266,13 @@ CombProc : process(curr_state, input_en, key, message,i, partial_res, f_i, mult_
                 is_active <= '1';
                 mult_a <= (others => '0');
                 mult_b <= (others => '0');
+                result <= partial_res;
+                valid_out <= '1';
                 if (ready_out = '1') then
-                    valid_out <= '1';
-                    result <= partial_res;                 
                     next_state <= IDLE;
-                else
                     valid_out <= '0';
                     result <= (others => '0');
+                else
                     next_state <= DONE;
                 end if;       
     

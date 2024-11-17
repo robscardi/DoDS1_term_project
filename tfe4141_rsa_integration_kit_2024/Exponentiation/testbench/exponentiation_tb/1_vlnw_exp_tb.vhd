@@ -36,33 +36,6 @@ ARCHITECTURE projecttb OF mod_exp_1_tb IS
     signal input_k_scenario     : num_array(scenario_length-1 downto 0) := ( 0 => 2753, 1 => 8493 );
     signal input_mod_scenario   : num_array(scenario_length-1 downto 0) := ( 0 => 28097, 1 => 13984);
 
-    component vlnw_exponentiation is
-        port (
-            --input controll
-            valid_in	: in STD_ULOGIC;
-            ready_in	: out STD_ULOGIC;
-    
-            --input data
-            message 	: in STD_ULOGIC_VECTOR ( input_width-1 downto 0 );
-            key 		: in STD_ULOGIC_VECTOR ( input_width-1 downto 0 );
-    
-            --ouput controll
-            ready_out	: in STD_ULOGIC;
-            valid_out	: out STD_ULOGIC;
-    
-            --output data
-            result 		: out STD_ULOGIC_VECTOR(input_width-1 downto 0);
-    
-            --modulus
-            modulus 	: in STD_ULOGIC_VECTOR(input_width-1 downto 0);
-    
-            --utility
-            clk 		: in STD_ULOGIC;
-            reset_n 	: in STD_ULOGIC
-        );
-    
-    end component;
-
 begin
 
     PROC_CLK : process is
