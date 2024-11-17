@@ -6,28 +6,26 @@ import numpy as np
 
 #a.__value__()
 class ModulusMultiplier:
-    def __call__(self, n:int, a:BitVector, b:BitVector) -> BitVector:
-        return BitVector.fromint(np.mod(a.__value__()*b.__value__(), n))
+    def __call__(self, n:BitVector, a:BitVector, b:BitVector) -> BitVector:
+        return BitVector.fromint(np.mod(a.__value__()*b.__value__(), n.__value__()))
 
 
 class BlakleyMethod(ModulusMultiplier):
     def __init__(self, mod:Modulus) -> None:
         super().__init__()
         self.mod = mod
-
-    def __call__(self, n:int, a:BitVector, b:BitVector ):
+    
+    def __call__(self, n:BitVector, a:BitVector, b:BitVector ):
         assert len(a) == len(b), "The two inputs should have the same bit length" 
         res = BitVector.fromint(0, len(a))
         for i in range(0, len(a)):
-            addendum = BitVector.fromstr("0"*len(a)) if a[len(a) -i -1] == 0 else b
-            res = (res << 1) + addendum
-            res = self.mod(res, n)
-        n = BitVector.fromint(n, len(res))
-        if res >= n:
-            res -= n
-        if res >=  n:
-            res -= n
-        
+            if a[len(a) -i -1] == 1:
+                partial_sum = BitVector.fromstr("0"+res.get_str()+"0") + BitVector.fromstr("00"+b.get_str())
+            else:
+                partial_sum = BitVector.fromstr("0"+res.get_str()+"0")
+            res = self.mod(partial_sum, BitVector.fromstr("00"+n.get_str()))
+            res = BitVector.fromstr(res.get_str()[2:res.__len__()])
+
         return res
 
 class BlakleyMethodParallel(ModulusMultiplier):
@@ -35,7 +33,7 @@ class BlakleyMethodParallel(ModulusMultiplier):
         super().__init__()
         self.mod = mod
 
-    def __call__(self, n: int, a: BitVector, b: BitVector) -> BitVector:
+    def __call__(self, n: BitVector, a: BitVector, b: BitVector) -> BitVector:
         assert len(a) == len(b)
         partial_res = BitVector.fromint(0, len(a))
         for i in range(0, len(a)):
