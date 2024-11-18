@@ -270,8 +270,6 @@ CombProc : process(curr_state, input_en, key, message,i, partial_res, f_i, mult_
                 valid_out <= '1';
                 if (ready_out = '1') then
                     next_state <= IDLE;
-                    valid_out <= '0';
-                    result <= (others => '0');
                 else
                     next_state <= DONE;
                 end if;       

@@ -50,12 +50,13 @@ architecture bhv of core_cluster is
     signal exp_ready_out    : STD_LOGIC_VECTOR(Cluster_Num-1 downto 0); -- <- exponentiation_inst(i).ready_out
     
     signal counter_fifo_in : unsigned(log2c(Cluster_Num)-1 downto 0) := (others => '0');        
+    signal counter_fifo_in_next : unsigned(log2c(Cluster_Num)-1 downto 0) := (others => '0');        
     signal counter_gen_out : unsigned(log2c(Cluster_Num)-1 downto 0) := (others => '0');
 
     signal is_last              : STD_LOGIC_VECTOR(Cluster_Num-1 downto 0) := (others => '0'); -- (i) is 1 if the i-th message is the last
     component exponentiation is
 	generic (
-		C_block_size : integer := 256
+		C_block_size : integer := C_block_size
 	);
 	port (
 		--input controll
@@ -106,62 +107,63 @@ begin
 
     
     FILL_FIFO_IN_PROC : process (clk, reset_n)
-        variable counter : unsigned(log2c(Cluster_Num)-1 downto 0) := (others => '0');
     begin
         if(reset_n = '0') then
-            counter := (others => '0'); 
             fifo_input <= (others => (others => '0'));  
             ready_in <= '1';
             is_last <= (others => '0');
             exp_valid_in <= (others => '0');
             fifo_in_ready <= (others => '1');
+            counter_fifo_in <= (others => '0');
+            counter_fifo_in_next <= TO_UNSIGNED(1, counter_fifo_in_next'length);
         elsif(rising_edge(clk)) then 
-            counter_fifo_in <= counter;
             exp_valid_in <= (others => '0');
             if(valid_in = '1' and (ready_in = '1' )) then
-                fifo_in_ready(to_integer(counter)) <= '0';
-                fifo_input(to_integer(counter)) <= message;
-                exp_valid_in(to_integer(counter)) <= '1';
-                is_last(to_integer(counter)) <= last_msg_in;
-                counter := counter +1;
-                if(to_integer(counter) = Cluster_Num ) then
-                    counter := (others => '0'); 
+                fifo_in_ready(to_integer(counter_fifo_in)) <= '0';
+                fifo_input(to_integer(counter_fifo_in)) <= message;
+                exp_valid_in(to_integer(counter_fifo_in)) <= '1';
+                is_last(to_integer(counter_fifo_in)) <= last_msg_in;
+                counter_fifo_in <= counter_fifo_in_next;
+                if(to_integer(counter_fifo_in_next) = Cluster_Num-1 ) then
+                    counter_fifo_in_next <= (others => '0');
+                else
+                    counter_fifo_in_next <= counter_fifo_in_next +1;
                 end if;
             else 
-                counter := counter;
+                counter_fifo_in <= counter_fifo_in;
+                counter_fifo_in_next <= counter_fifo_in_next;
             end if;
-            ready_in <= fifo_in_ready(to_integer(counter));
-            if(exp_ready_in(to_integer(counter)) = '1') then
-                fifo_in_ready(to_integer(counter)) <= '1';
+            ready_in <= fifo_in_ready(to_integer(counter_fifo_in_next));
+            if(exp_ready_in(to_integer(counter_fifo_in_next)) = '1') then
+                fifo_in_ready(to_integer(counter_fifo_in_next)) <= '1';
             end if;
         end if;
     end process;
 
     OUTPUT : process (clk, reset_n)
-        variable counter : unsigned(log2c(Cluster_Num)-1 downto 0) := (others => '0'); 
     begin
-        counter_gen_out <= counter;
         if(reset_n = '0') then
             result <= (others => '0');
             last_msg_out <= '0';
             valid_out <= '0';
-            counter := (others => '0');
+            counter_gen_out <= (others => '0');
             exp_ready_out <= (others => '0');
         elsif(rising_edge(clk)) then 
             last_msg_out <= '0';
             valid_out <= '0';
             exp_ready_out <= (others => '0');            
-            if(ready_out = '1' and exp_valid_out(to_integer(counter)) = '1') then
+            if(ready_out = '1' and exp_valid_out(to_integer(counter_gen_out)) = '1') then
                 valid_out <= '1';
-                result <= exp_result(to_integer(counter));
-                last_msg_out <= is_last(to_integer(counter));
-                exp_ready_out(to_integer(counter)) <= '1'; 
-                counter := counter +1; 
-                if(to_integer(counter) = Cluster_Num ) then
-                    counter := (others => '0'); 
+                result <= exp_result(to_integer(counter_gen_out));
+                last_msg_out <= is_last(to_integer(counter_gen_out));
+                exp_ready_out(to_integer(counter_gen_out)) <= '1'; 
+                if(to_integer(counter_gen_out) = Cluster_Num-1 ) then
+                    counter_gen_out <= (others => '0'); 
+                else 
+                    counter_gen_out <= counter_gen_out +1; 
                 end if;
             else
-                counter := counter;
+                counter_gen_out <= counter_gen_out;
             end if;
             if(valid_out = '1' and ready_out = '0') then
                 valid_out <= '1';

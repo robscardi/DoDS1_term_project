@@ -5,74 +5,34 @@ USE ieee.std_logic_unsigned.ALL;
 USE std.textio.ALL;
 use work.data_type.all;
 
-ENTITY core_cluster_2_tb IS
-END core_cluster_2_tb;
+ENTITY core_cluster_2_tb_synth IS
+END core_cluster_2_tb_synth;
 
-ARCHITECTURE bhvtb OF core_cluster_2_tb IS
+ARCHITECTURE bhvtb OF core_cluster_2_tb_synth IS
     
     CONSTANT CLOCK_PERIOD : TIME := 10 ns;
     CONSTANT input_width : POSITIVE := 256;
     CONSTANT RESET_TIME     : TIME := 2*CLOCK_PERIOD;
-    CONSTANT CLUSTER_NUM    : POSITIVE := 4;
 
-    
-    subtype DATA is STD_ULOGIC_VECTOR(input_width-1 downto 0);
-    type FIFO is array (40 downto 0) of DATA;
+    type FIFO is array (40 downto 0) of STD_ULOGIC_VECTOR(input_width-1 downto 0);
     signal tb_result_check_fifo : FIFO := (others => (others => '0') ); 
 
     SIGNAL tb_rst   : STD_ULOGIC := '1';
     SIGNAL tb_clk   : STD_ULOGIC := '0';
     
-    signal tb_message  : DATA := (others => '0');
-    signal tb_key  : DATA := (others => '0');
-    signal tb_modulus  : DATA := (others => '0');
+    signal tb_message   :   STD_ULOGIC_VECTOR(input_width-1 downto 0) := (others => '0');
+    signal tb_key       :   STD_ULOGIC_VECTOR(input_width-1 downto 0) := (others => '0');
+    signal tb_modulus   :   STD_ULOGIC_VECTOR(input_width-1 downto 0) := (others => '0');
 
     signal tb_valid_in      : STD_ULOGIC := '0';
     signal tb_ready_in      : STD_ULOGIC;
     signal tb_ready_out     : STD_ULOGIC := '1';
     signal tb_valid_out     : STD_ULOGIC;
-    signal tb_result        : DATA       := (others => '0') ;
+    signal tb_result        : STD_ULOGIC_VECTOR(input_width-1 downto 0) := (others => '0') ;
 
     signal tb_last_in       : STD_ULOGIC := '0';
     signal tb_last_out      : STD_ULOGIC;
     file input_file : TEXT open READ_MODE is "core_cluster_2_tb.txt";
-
-    component core_cluster is
-	generic (
-		C_block_size    : integer := 256;
-        Cluster_Num     : positive := 10 
-	);
-	port (
-		--input controll
-		valid_in	: in STD_ULOGIC;
-		ready_in	: out STD_ULOGIC;
-
-		--input data
-		message 	: in STD_ULOGIC_VECTOR ( C_block_size-1 downto 0 );
-		key 		: in STD_ULOGIC_VECTOR ( C_block_size-1 downto 0 );
-
-		--ouput controll
-		ready_out	: in STD_ULOGIC;
-		valid_out	: out STD_ULOGIC;
-
-		--output data
-		result 		: out STD_ULOGIC_VECTOR(C_block_size-1 downto 0);
-
-		--modulus
-		modulus 	: in STD_ULOGIC_VECTOR(C_block_size-1 downto 0);
-
-		--utility
-		clk 		: in STD_ULOGIC;
-		reset_n 	: in STD_ULOGIC;
-
-        last_msg_in    : in STD_ULOGIC;
-        last_msg_out   : out STD_ULOGIC
-
-	);
-    end component;
-
-    --alias tb_full_fifo_input is << signal core_cluster.full_fifo_input : STD_LOGIC >>;
-    --alias tb_full_fifo_output is << signal core_cluster.full_fifo_output : STD_LOGIC >>;
 
 begin
 
@@ -82,11 +42,7 @@ begin
         tb_clk <= NOT tb_clk;
     end process;
 
-    UUT : core_cluster 
-        generic map (
-            C_block_size => input_width,
-            Cluster_num => CLUSTER_NUM
-        )
+    UUT : entity work.core_cluster 
         port map (
             valid_in	=> tb_valid_in,
             ready_in	=> tb_ready_in,

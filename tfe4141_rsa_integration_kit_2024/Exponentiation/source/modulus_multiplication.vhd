@@ -29,7 +29,6 @@ architecture blakley_serial of modulus_multiplication is
     signal partial_sum_ready    : STD_ULOGIC;
 
     signal partial_res_ready    : STD_ULOGIC;
-    signal counter_middle       : STD_ULOGIC;
 
     signal counter              : unsigned(log2c(C_BLOCK_SIZE)+1 downto 0);
     signal a_r                  : STD_ULOGIC_VECTOR(C_BLOCK_SIZE-1 downto 0);
@@ -74,23 +73,24 @@ begin
 end process;
 
 
-COUNTER_PROC : process (clk, partial_sum_ready, partial_res_ready, reset_n, enable_i)
+COUNTER_PROC : process (clk, reset_n)
 begin
-    if(reset_n = '0' or enable_i = '1' ) then
+    if(reset_n = '0') then
         counter <= (others => '0');
-        counter_middle <= '0';
     elsif(rising_edge(clk)) then
-        if (is_active = '1' and partial_res_ready = '1') then
-            counter <= counter + 1;
-            counter_middle <= '0';
-        elsif(is_active = '1') then 
-            counter <= counter;
-            counter_middle <= '1';
+        if(enable_i = '1' or is_active = '0') then
+            counter <= (others => '0');
+        else 
+            if (is_active = '1' and partial_res_ready = '1') then
+                counter <= counter + 1;
+            elsif(is_active = '1') then 
+                counter <= counter;
+            end if;
         end if;
     end if;
 end process;
 
-SHIFT_A_PROC : process (clk, reset_n, enable_i, partial_sum_ready)
+SHIFT_A_PROC : process (clk, reset_n)
 begin
     if(reset_n = '0') then
         a_r <= (others => '0');
@@ -105,35 +105,48 @@ begin
     end if;
 end process;
 
-IS_ACTIVE_PROC : process (clk, reset_n, enable_i, counter)
+IS_ACTIVE_PROC : process (clk, reset_n)
 begin
-    if( reset_n = '0' or counter = C_BLOCK_SIZE+1) then
+    if( reset_n = '0') then
         is_active <= '0';
-    elsif(rising_edge(clk) and enable_i = '1') then
-        is_active <= '1';
+    elsif(rising_edge(clk)) then
+        if(counter = C_BLOCK_SIZE+1 ) then
+            is_active <= '0';
+        elsif(enable_i = '1') then
+            is_active <= '1';
+        else
+            is_active <= is_active;
+        end if;
     end if;
 end process;
 
 PARTIAL_SUM_PROC : process ( clk, reset_n, counter, enable_i)
 begin
-    if(reset_n = '0' or enable_i = '1')  then
+    if(reset_n = '0')  then
         partial_res <= (others => '0');
         partial_sum <= (others => '0');
         partial_res_ready <= '1';
         partial_sum_ready <= '0';
     elsif (rising_edge(clk)) then
-        if(partial_res_ready = '1' and is_active = '1') then
-            if (a_r(C_BLOCK_SIZE-1) = '1') then
-                partial_sum <= STD_ULOGIC_VECTOR(unsigned('0' & partial_res & '0') + unsigned("00" & b_r));
-            else
-                partial_sum <= '0' & partial_res & '0'; 
-            end if;
-            partial_sum_ready <= '1';
-            partial_res_ready <= '0';
-        elsif(partial_sum_ready = '1') then 
-            partial_res <= module_blakley(partial_sum, modulus);
+        if(enable_i = '1') then
+            partial_res <= (others => '0');
+            partial_sum <= (others => '0');
             partial_res_ready <= '1';
             partial_sum_ready <= '0';
+        else
+            if(partial_res_ready = '1' and is_active = '1') then
+                if (a_r(C_BLOCK_SIZE-1) = '1') then
+                    partial_sum <= STD_ULOGIC_VECTOR(unsigned('0' & partial_res & '0') + unsigned("00" & b_r));
+                else
+                    partial_sum <= '0' & partial_res & '0'; 
+                end if;
+                partial_sum_ready <= '1';
+                partial_res_ready <= '0';
+            elsif(partial_sum_ready = '1') then 
+                partial_res <= module_blakley(partial_sum, modulus);
+                partial_res_ready <= '1';
+                partial_sum_ready <= '0';
+            end if;
         end if;
     end if;
 end process;

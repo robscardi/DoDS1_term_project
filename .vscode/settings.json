@@ -1,4 +1,14 @@
 {
     "vhdl-by-hgb.vhdlls.toml.generation": "manual",
-    "vhdl-by-hgb.vhdl-formatter.align.procedure": false
+    "vhdl-by-hgb.vhdl-formatter.align.procedure": false,
+
+    "python.testing.unittestArgs": [
+        "-v",
+        "-s",
+        "./python_source/testing",
+        "-p",
+        "*_test.py"
+    ],
+    "python.testing.pytestEnabled": false,
+    "python.testing.unittestEnabled": true
 }

@@ -70,7 +70,8 @@ architecture rtl of rsa_core is
 begin
 	i_exponentiation : entity work.core_cluster
 		generic map (
-			C_block_size => C_BLOCK_SIZE
+			C_block_size => C_BLOCK_SIZE,
+			Cluster_num => 8
 		)
 		port map (
 			message   => msgin_data  ,
