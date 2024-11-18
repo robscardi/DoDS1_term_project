@@ -10,14 +10,14 @@ class BlakleyMethodTest(TestCase):
         BM = BlakleyMethod(EuclidianModulus())
         a = BitVector.fromint(7, 16)
         b = BitVector.fromint(3, 16)
-        n = 20
+        n = BitVector.fromint(20,16)
         res = BM(n, a, b)
         self.assertEqual(BitVector.fromint(1), res)
     def test_BMP(self):
         BM =BlakleyMethod(EuclidianModulus())
         a = BitVector.fromint(45, 16)
         b = BitVector.fromint(64, 16)
-        n = 300
+        n = BitVector.fromint(300,16)
         res = BM(n, a, b)
         BMP = BlakleyMethodParallel(EuclidianModulus())
         res2 = BMP(n, a, b)
