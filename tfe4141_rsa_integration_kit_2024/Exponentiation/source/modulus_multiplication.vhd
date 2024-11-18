@@ -62,7 +62,7 @@ begin
         output_ready <= '0';
         output <= (others => '0');
     elsif(rising_edge(clk)) then
-        if (counter = C_BLOCK_SIZE+1) then
+        if (counter = C_BLOCK_SIZE and partial_res_ready = '1') then
             output_ready <= '1';
             output <= partial_res;
         else
@@ -101,6 +101,9 @@ begin
             b_r <= input_b;
         elsif(is_active = '1' and partial_sum_ready = '1') then
             a_r <= STD_ULOGIC_VECTOR(shift_left(unsigned(a_r), 1));
+        else 
+            a_r <= a_r;
+            b_r <= b_r;
         end if;
     end if;
 end process;
@@ -110,7 +113,7 @@ begin
     if( reset_n = '0') then
         is_active <= '0';
     elsif(rising_edge(clk)) then
-        if(counter = C_BLOCK_SIZE+1 ) then
+        if(counter = C_BLOCK_SIZE ) then
             is_active <= '0';
         elsif(enable_i = '1') then
             is_active <= '1';
@@ -146,6 +149,11 @@ begin
                 partial_res <= module_blakley(partial_sum, modulus);
                 partial_res_ready <= '1';
                 partial_sum_ready <= '0';
+            else 
+                partial_res <= partial_res;
+                partial_sum <= partial_sum;
+                partial_res_ready <= partial_res_ready;
+                partial_sum_ready <= partial_sum_ready;
             end if;
         end if;
     end if;

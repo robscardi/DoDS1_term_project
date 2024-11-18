@@ -83,6 +83,7 @@ begin
     TEST_ROUTINE : process is
         variable correct_res : unsigned(input_width-1 downto 0) := TO_UNSIGNED(0, input_width);
         variable line_in : line;
+        variable line_blank  : line;
         variable var_tb_mod     : STD_ULOGIC_VECTOR(input_width-1 downto 0) := (others => '0'); 
         variable var_tb_a       : STD_ULOGIC_VECTOR(input_width-1 downto 0) := (others => '0'); 
         variable var_tb_b       : STD_ULOGIC_VECTOR(input_width-1 downto 0) := (others => '0');
@@ -98,6 +99,8 @@ begin
         while not ENDFILE(input_file) loop
             WAIT UNTIL rising_edge(tb_clk);
 
+            readline(input_file, line_blank);             -- Read blanck line
+            
             readline(input_file, line_in);
             hread(line_in, var_tb_a);
             readline(input_file, line_in);
