@@ -38,18 +38,20 @@ end exponentiation;
 
 architecture expBehave of exponentiation is
     -- States for the state machine
-    type state is (IDLE, PRECALC1, PRECALC2, PRECALC3, PRECALC4, PRECALC5, PRECALC6, PRECALC7, SQUARE1, SQUARE2, SQUARE3, MULTIPLY, DONE);
+    type state is (IDLE, PRECALC2, PRECALC3, PRECALC4, PRECALC5, PRECALC6, PRECALC7, SQUARE1, SQUARE2, SQUARE3, MULTIPLY, DONE);
     -- Array type to store 7 values during precalculation
     type pwr_message_array is array (0 to 6) of STD_ULOGIC_VECTOR(255 downto 0);
     signal curr_state           : state := IDLE;
     signal next_state           : state := IDLE;
     signal pwr_message          : pwr_message_array;
     signal counter_precalc      : unsigned(2 downto 0);
+    constant max_pre_counter    : unsigned(counter_precalc'range) := TO_UNSIGNED(6, counter_precalc'length);
     signal input_en             : STD_ULOGIC;
     signal is_active            : STD_ULOGIC := '0';
 	signal partial_res          : STD_ULOGIC_VECTOR(C_block_size-1 downto 0):= (others => '0');
-	signal i 					: unsigned(6 downto 0); --Works only for 256 bits here
-	signal f_i 					: STD_ULOGIC_VECTOR(2 downto 0);
+	signal i_counter 			: signed(7 downto 0);         --Works only for 256 bits here
+    constant max_i_counter      : signed(i_counter'range) := TO_SIGNED(85, i_counter'length);
+	signal key_block 			: STD_ULOGIC_VECTOR(2 downto 0);
 	signal mult_en  			: STD_ULOGIC;
     signal mult_a 				: STD_ULOGIC_VECTOR(C_block_size-1 downto 0);
     signal mult_b 				: STD_ULOGIC_VECTOR(C_block_size-1 downto 0);
@@ -95,7 +97,7 @@ ready_in <= not(is_active);
 
 
 --Main process
-CombProc : process(curr_state, input_en, key, message,i, partial_res, f_i, mult_en, mult_done,mult_out, ready_out, pwr_message)
+CombProc : process(curr_state, input_en, key, message,i_counter, partial_res, key_block, mult_en, mult_done,mult_out, ready_out, pwr_message)
     begin
         next_state <= IDLE;
         case curr_state is
@@ -106,35 +108,19 @@ CombProc : process(curr_state, input_en, key, message,i, partial_res, f_i, mult_
                 mult_a <= (others => '0');
                 mult_b <= (others => '0');
                 if (input_en = '1') then --START
-                    next_state <= PRECALC1;
+                    next_state <= PRECALC2;
                 else
                     next_state <= IDLE;
                 end if;
                 
             -- PRECALCULATION of (message**k)[modulus] for k from 1 to 7 (octal method requirement) 
-            -- 1 modular multiplication per state  
-            when PRECALC1 =>
-                is_active <= '1';
-                result <= (others => '0');
-                valid_out <= '0';                    
-                mult_a <= (others => '0');
-                mult_a(0) <= '1';
-                mult_b <= message;
-                -- Inputs are given to the mod_mult component
-                if (mult_done = '1' and mult_en = '0') then
-                    --Mod_mult ended
-                    next_state <= PRECALC2;
-                else
-                    --Wait for the end of mod_mult
-                    next_state <= PRECALC1;
-                end if;
                 
             when PRECALC2 =>
                 is_active <= '1';
                 result <= (others => '0');
                 valid_out <= '0';
-                mult_a <= partial_res;
-                mult_b <= partial_res;
+                mult_a <= pwr_message(0);
+                mult_b <= pwr_message(0);
                 if (mult_done = '1' and mult_en = '0') then
                     next_state <= PRECALC3;
                 else
@@ -207,7 +193,7 @@ CombProc : process(curr_state, input_en, key, message,i, partial_res, f_i, mult_
                 is_active <= '1';
                 result <= (others => '0');
                 valid_out <= '0'; 
-                if (TO_INTEGER(i) < 100) then -- Technically (if i < 0 then) but after 0 i gets to 127
+                if (TO_INTEGER(i_counter) >= 0) then 
                     mult_a <= partial_res;
                     mult_b <= partial_res;
                     if (mult_done = '1' and mult_en = '0') then
@@ -240,7 +226,7 @@ CombProc : process(curr_state, input_en, key, message,i, partial_res, f_i, mult_
                 mult_a <= partial_res;
                 mult_b <= partial_res;
                 if (mult_done = '1' and mult_en = '0') then
-                    if (f_i /= "000") then
+                    if (key_block /= "000") then
                         next_state <= MULTIPLY;
                     else
                         next_state <= SQUARE1;
@@ -249,13 +235,13 @@ CombProc : process(curr_state, input_en, key, message,i, partial_res, f_i, mult_
                     next_state <= SQUARE3;
                 end if;
                 
-            -- Additional modular multiplication when f_i /= "000"
+            -- Additional modular multiplication when key_block /= "000"
             when MULTIPLY =>
                 is_active <= '1';
                 result <= (others => '0');
                 valid_out <= '0';
                 mult_a <= partial_res;
-                mult_b <= pwr_message(TO_INTEGER(unsigned(f_i))-1);
+                mult_b <= pwr_message(TO_INTEGER(unsigned(key_block))-1);
                 if (mult_done = '1' and mult_en = '0') then
                     next_state <= SQUARE1;
                 else
@@ -306,31 +292,31 @@ SynchProc   : process (reset_n, clk,next_state,curr_state)
 i_Proc :    process(reset_n, clk)
                 begin 
                     if (reset_n = '0') then
-                        i <= to_unsigned(85,7);
+                        i_counter <= max_i_counter;
                     elsif (rising_edge(clk)) then
                         if(curr_state = IDLE) then
-                            i <= to_unsigned(85,7);
+                            i_counter <= max_i_counter;
                         elsif(next_state = SQUARE1 and curr_state /= SQUARE1) then
-                            i <= i - 1;
+                            i_counter <= i_counter - 1;
                         else 
-                            i <= i;
+                            i_counter <= i_counter;
                         end if;
                     end if;
                 end process i_Proc;
                 
 -- Keeps track of the current key 3-bits-group during the main loop                           
-f_i_Proc :  process(reset_n, clk)
+KEY_BLOCK_Proc :  process(reset_n, clk)
                 begin 
                     if (reset_n = '0') then
-                        f_i <= (others => '0');
+                        key_block <= (others => '0');
                     elsif (rising_edge(clk)) then
                         if(curr_state = IDLE) then
-                            f_i <= (others => '0');
-                        elsif( curr_state = SQUARE1 and TO_INTEGER(i) < 85 ) then
-                            f_i <= key((3*TO_INTEGER(i)+2) downto (3*TO_INTEGER(i)));
+                            key_block <= (others => '0');
+                        elsif( curr_state = SQUARE1 and TO_INTEGER(i_counter) >= 0) then
+                            key_block <= key((3*TO_INTEGER(i_counter)+2) downto (3*TO_INTEGER(i_counter)));
                         end if;
                     end if;
-                end process f_i_Proc;
+                end process KEY_BLOCK_Proc;
        
 --Stores the result of the last modular multiplication (which becomes the input of the next one)               
 partial_res_Proc :  process(reset_n, clk)
@@ -366,10 +352,14 @@ pwr_message_Proc : process(reset_n, clk,curr_state,next_state,counter_precalc)
                             if(curr_state = IDLE ) then
                                 pwr_message <= (others => (others => '0'));
                                 counter_precalc <= (others => '0');
-                            
-                            elsif (next_state /= curr_state and curr_state /= IDLE and counter_precalc < 7) then
+                                if(input_en = '1') then
+                                    pwr_message(0) <= message;
+                                else
+                                    pwr_message(0) <= pwr_message(0);
+                                end if;
+                            elsif (next_state /= curr_state and curr_state /= IDLE and counter_precalc < max_pre_counter) then
                                 pwr_message <= pwr_message;
-                                pwr_message(TO_INTEGER(counter_precalc)) <= mult_out;
+                                pwr_message(TO_INTEGER(counter_precalc)+1) <= mult_out;
                                 counter_precalc <= counter_precalc + 1;
                             else
                                 counter_precalc <= counter_precalc;
