@@ -75,11 +75,6 @@ ARCHITECTURE projecttb OF core_cluster_1_tb IS
 	);
     end component;
 
-    alias full_fifo_input       is << signal UUT.full_fifo_input : STD_LOGIC >>;
-    alias full_fifo_output      is << signal UUT.full_fifo_out : STD_LOGIC >>;
-    alias exp_valid_out         is << signal UUT.exp_valid_out : STD_LOGIC_VECTOR(CLUSTER_NUM-1 downto 0) >>;
-    alias exp_valid_out_stable  is << signal UUT.exp_valid_out_stable : STD_LOGIC_VECTOR(CLUSTER_NUM-1 downto 0) >>;
-
 begin
 
     PROC_CLK : process is
@@ -124,31 +119,6 @@ begin
         wait;
 
     end process;
-
-    ALIAS_TEST_ROUTINE_EXP_DONE : process is
-    begin
-
-        wait until tb_rst = '0';
-        wait until tb_rst = '1';
-        while(true) loop
-            wait until not exp_valid_out = "0000";
-                report "exp_out_valid = " & to_string(exp_valid_out);
-                report "exp_out_valid_stable = " & to_string(exp_valid_out_stable); 
-        end loop;
-    end process;    
-
-    ALIAS_TEST_ROUTINE_FIFO : process is
-    begin
-       wait until tb_rst = '0'; 
-       wait until tb_rst = '1';
-       wait until (full_fifo_input = '1');
-            report "full_fifo_input = 1";
-       wait until (full_fifo_output = '1');
-            report "full_fifo_output = 1";
-       wait;
-    end process;
-
-
     TEST_ROUTINE : process is
         variable counter : integer := 0;
         variable i : integer := 0;

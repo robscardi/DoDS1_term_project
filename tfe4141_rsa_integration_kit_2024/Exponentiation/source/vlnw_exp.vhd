@@ -42,7 +42,6 @@ end vlnw_exponentiation;
 
 architecture bhv of vlnw_exponentiation is
     constant D             : integer := 4;
-    constant Q             : integer := 1; 
     constant MATRIX_LENGHT : POSITIVE := ((2**D)/2);
  
 

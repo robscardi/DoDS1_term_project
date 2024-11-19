@@ -303,32 +303,44 @@ SynchProc   : process (reset_n, clk,next_state,curr_state)
                 end process SynchProc;
                 
 -- Keeps track of the counter during the main loop (SQUARE1-2-3-MULTIPLY)             
-i_Proc :    process(reset_n, clk, next_state,curr_state)
+i_Proc :    process(reset_n, clk)
                 begin 
-                    if (reset_n = '0' or curr_state = IDLE) then
+                    if (reset_n = '0') then
                         i <= to_unsigned(85,7);
-                    elsif (rising_edge(clk) and next_state = SQUARE1 and curr_state /= SQUARE1) then
-                        i <= i - 1;
+                    elsif (rising_edge(clk)) then
+                        if(curr_state = IDLE) then
+                            i <= to_unsigned(85,7);
+                        elsif(next_state = SQUARE1 and curr_state /= SQUARE1) then
+                            i <= i - 1;
+                        else 
+                            i <= i;
+                        end if;
                     end if;
                 end process i_Proc;
                 
 -- Keeps track of the current key 3-bits-group during the main loop                           
-f_i_Proc :  process(reset_n, clk, curr_state,i)
+f_i_Proc :  process(reset_n, clk)
                 begin 
-                    if (reset_n = '0' or curr_state = IDLE) then
+                    if (reset_n = '0') then
                         f_i <= (others => '0');
-                    elsif (rising_edge(clk) and curr_state = SQUARE1 and TO_INTEGER(i) < 85) then
-                        f_i <= key((3*TO_INTEGER(i)+2) downto (3*TO_INTEGER(i)));
+                    elsif (rising_edge(clk)) then
+                        if(curr_state = IDLE) then
+                            f_i <= (others => '0');
+                        elsif( curr_state = SQUARE1 and TO_INTEGER(i) < 85 ) then
+                            f_i <= key((3*TO_INTEGER(i)+2) downto (3*TO_INTEGER(i)));
+                        end if;
                     end if;
                 end process f_i_Proc;
        
 --Stores the result of the last modular multiplication (which becomes the input of the next one)               
-partial_res_Proc :  process(reset_n, clk,curr_state,next_state,key)
+partial_res_Proc :  process(reset_n, clk)
                 begin 
-                    if (reset_n = '0' or curr_state = IDLE) then
+                    if (reset_n = '0') then
                         partial_res <= (others => '0');
                     elsif rising_edge(clk) then
-                        if (curr_state = PRECALC7) then
+                        if (curr_state = IDLE) then 
+                            partial_res <= (others => '0');
+                        elsif (curr_state = PRECALC7) then
                             -- OCTAL METHOD INITIALIZATION
                             if (key(255) = '1') then
                                 partial_res <= message;
@@ -338,6 +350,8 @@ partial_res_Proc :  process(reset_n, clk,curr_state,next_state,key)
                             end if;
                         elsif (next_state /= curr_state and next_state /= DONE) then
                             partial_res <= mult_out;
+                        else
+                            partial_res <= partial_res;
                         end  if;
                     end if;
                 end process partial_res_Proc;
@@ -345,13 +359,21 @@ partial_res_Proc :  process(reset_n, clk,curr_state,next_state,key)
 --Fills the pwr_message array during the precalculation states                
 pwr_message_Proc : process(reset_n, clk,curr_state,next_state,counter_precalc)
                     begin
-                        if (reset_n = '0' or curr_state = IDLE) then
+                        if (reset_n = '0') then
                             pwr_message <= (others => (others => '0'));
                             counter_precalc <= (others => '0');
                         elsif rising_edge(clk) then
-                            if (next_state /= curr_state and curr_state /= IDLE and counter_precalc < 7) then
+                            if(curr_state = IDLE ) then
+                                pwr_message <= (others => (others => '0'));
+                                counter_precalc <= (others => '0');
+                            
+                            elsif (next_state /= curr_state and curr_state /= IDLE and counter_precalc < 7) then
+                                pwr_message <= pwr_message;
                                 pwr_message(TO_INTEGER(counter_precalc)) <= mult_out;
                                 counter_precalc <= counter_precalc + 1;
+                            else
+                                counter_precalc <= counter_precalc;
+                                pwr_message <= pwr_message;
                             end if;                            
                         end if;
                     end process pwr_message_Proc;

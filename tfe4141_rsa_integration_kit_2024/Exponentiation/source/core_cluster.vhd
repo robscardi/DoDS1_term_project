@@ -118,6 +118,11 @@ begin
             counter_fifo_in_next <= TO_UNSIGNED(1, counter_fifo_in_next'length);
         elsif(rising_edge(clk)) then 
             exp_valid_in <= (others => '0');
+            if(exp_ready_in(to_integer(counter_fifo_in_next)) = '1') then
+                fifo_in_ready(to_integer(counter_fifo_in_next)) <= '1';
+            else
+                fifo_in_ready(to_integer(counter_fifo_in_next)) <= fifo_in_ready(to_integer(counter_fifo_in_next));
+            end if;
             if(valid_in = '1' and (ready_in = '1' )) then
                 fifo_in_ready(to_integer(counter_fifo_in)) <= '0';
                 fifo_input(to_integer(counter_fifo_in)) <= message;
@@ -134,9 +139,6 @@ begin
                 counter_fifo_in_next <= counter_fifo_in_next;
             end if;
             ready_in <= fifo_in_ready(to_integer(counter_fifo_in_next));
-            if(exp_ready_in(to_integer(counter_fifo_in_next)) = '1') then
-                fifo_in_ready(to_integer(counter_fifo_in_next)) <= '1';
-            end if;
         end if;
     end process;
 
@@ -149,25 +151,29 @@ begin
             counter_gen_out <= (others => '0');
             exp_ready_out <= (others => '0');
         elsif(rising_edge(clk)) then 
-            last_msg_out <= '0';
             valid_out <= '0';
             exp_ready_out <= (others => '0');            
-            if(ready_out = '1' and exp_valid_out(to_integer(counter_gen_out)) = '1') then
-                valid_out <= '1';
-                result <= exp_result(to_integer(counter_gen_out));
-                last_msg_out <= is_last(to_integer(counter_gen_out));
-                exp_ready_out(to_integer(counter_gen_out)) <= '1'; 
-                if(to_integer(counter_gen_out) = Cluster_Num-1 ) then
-                    counter_gen_out <= (others => '0'); 
+            result <= exp_result(to_integer(counter_gen_out));
+            last_msg_out <= '0';
+            if(ready_out = '1') then
+                if(exp_valid_out(to_integer(counter_gen_out)) = '1') then
+                    last_msg_out <= is_last(to_integer(counter_gen_out));
+                    valid_out <= '1';
+                    exp_ready_out(to_integer(counter_gen_out)) <= '1'; 
+                    if(to_integer(counter_gen_out) = Cluster_Num-1 ) then
+                        counter_gen_out <= (others => '0'); 
+                    else 
+                        counter_gen_out <= counter_gen_out +1; 
+                    end if;
                 else 
-                    counter_gen_out <= counter_gen_out +1; 
+                    counter_gen_out <= counter_gen_out;
                 end if;
             else
-                counter_gen_out <= counter_gen_out;
-            end if;
-            if(valid_out = '1' and ready_out = '0') then
-                valid_out <= '1';
-                last_msg_out <= last_msg_out;
+                if(valid_out = '1') then 
+                    valid_out <= '1';
+                else
+                    valid_out <= '0';
+                end if;
             end if;
         end if;
     end process;
