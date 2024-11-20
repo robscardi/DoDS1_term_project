@@ -28,14 +28,3 @@ class BlakleyMethod(ModulusMultiplier):
 
         return res
 
-class BlakleyMethodParallel(ModulusMultiplier):
-    def __init__(self, mod:Modulus) -> None:
-        super().__init__()
-        self.mod = mod
-
-    def __call__(self, n: BitVector, a: BitVector, b: BitVector) -> BitVector:
-        assert len(a) == len(b)
-        partial_res = BitVector.fromint(0, len(a))
-        for i in range(0, len(a)):
-            partial_res += self.mod(b<<i, n) if a[i] else BitVector.fromint(0, len(a))
-        return self.mod(partial_res, n)

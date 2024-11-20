@@ -19,18 +19,3 @@ def __mod__(a : BitVector, n:BitVector) -> BitVector:
 	while r.get_value() >= n.get_value():
 		r -= n
 	return r
-
-# Function to return the value of (bin % k) for big numbers 
-'''def getMod(value:BitVector, n:BitVector): 
-
-	assert(n.get_value() > 0)
-	mem = BitVector.fromint(0, len(value))
-	pt = BitVector.fromint(1, len(value))
-	for i in range(0, len(value)):
-		pt = __mod__(pt, n)
-		index = BitVector.fromint(1, len(value))
-		pwrTwo = (index << i) & value
-		if pwrTwo.get_value() : mem = mem +pt
-		pt = pt <<1
-
-	return __mod__(mem, n)'''
