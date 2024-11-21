@@ -6,7 +6,7 @@ from lib.utils import BitVector
 class BlakleyMethodTest(TestCase):
 
     def test_BM(self):
-        BM = BlakleyMethod(EuclidianModulus())
+        BM = BlakleyMethod(BlakleyModulus())
         a = BitVector.fromint(7, 16)
         b = BitVector.fromint(3, 16)
         n = BitVector.fromint(20,16)
@@ -14,7 +14,7 @@ class BlakleyMethodTest(TestCase):
         self.assertEqual(BitVector.fromint(1), res)
     
     def test_BM2(self):
-        BM = BlakleyMethod(EuclidianModulus())
+        BM = BlakleyMethod(BlakleyModulus())
         a = BitVector.fromint(3649, 256)
         b = BitVector.fromint(2753, 256)
         n = BitVector.fromint(28097,256)
