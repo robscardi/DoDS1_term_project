@@ -35,7 +35,7 @@ architecture blakley_serial of modulus_multiplication is
     signal b_r                  : STD_ULOGIC_VECTOR(C_BLOCK_SIZE-1 downto 0);
     signal is_active            : STD_ULOGIC;
 
-    
+    -- Calculate the module for the partial sum of the Blakley algorithm
     pure function module_blakley (input: STD_ULOGIC_VECTOR(C_BLOCK_SIZE+1 downto 0); modulus: STD_ULOGIC_VECTOR(C_BLOCK_SIZE-1 downto 0) ) return STD_ULOGIC_VECTOR is
 
         variable first_sub      : signed(C_BLOCK_SIZE+2 downto 0 );
@@ -56,7 +56,8 @@ architecture blakley_serial of modulus_multiplication is
     
 begin
 
-READY_PROC : process (clk, reset_n, counter)
+-- Checks if the counter has reached the end, post the result on the output port and stops the calculation.
+READY_PROC : process (clk, reset_n)
 begin
     if(reset_n = '0') then
         output_ready <= '0';
@@ -72,7 +73,7 @@ begin
     end if;
 end process;
 
-
+-- Update the counter if the partial result is ready
 COUNTER_PROC : process (clk, reset_n)
 begin
     if(reset_n = '0') then
@@ -90,6 +91,7 @@ begin
     end if;
 end process;
 
+-- Initialize the operands registers, then shift a_r if calculation is ongoing
 SHIFT_A_PROC : process (clk, reset_n)
 begin
     if(reset_n = '0') then
@@ -108,6 +110,7 @@ begin
     end if;
 end process;
 
+-- Checks if enable_i has been given and starts calculation
 IS_ACTIVE_PROC : process (clk, reset_n)
 begin
     if( reset_n = '0') then
@@ -123,7 +126,8 @@ begin
     end if;
 end process;
 
-PARTIAL_SUM_PROC : process ( clk, reset_n, counter, enable_i)
+-- Calculates the partial results 
+PARTIAL_SUM_PROC : process ( clk, reset_n)
 begin
     if(reset_n = '0')  then
         partial_res <= (others => '0');

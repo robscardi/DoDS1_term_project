@@ -1,3 +1,4 @@
+#Simple script to check the correctness of the Blakley Method
 import numpy as np
 
 a = 3649

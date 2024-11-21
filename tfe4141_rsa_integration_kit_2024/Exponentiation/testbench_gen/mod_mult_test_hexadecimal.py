@@ -1,3 +1,4 @@
+# Simple script to check the correct functioning of the Blakley method
 import numpy as np
 
 a = int("0x76e38fd657e8b6db8f7d173f2cc198a5cd02657c45d264c8629015c4b22ec17e", 0)

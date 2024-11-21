@@ -42,16 +42,17 @@ architecture bhv of core_cluster is
     signal fifo_input : FIFO;       -- stores the input messages
     signal fifo_in_ready    : STD_LOGIC_VECTOR(Cluster_Num-1 downto 0); -- <- exponentiation_inst(i).ready_out
 
-    signal exp_result : FIFO;
+    signal exp_result : FIFO;       -- stores the output results
 
     signal exp_valid_out    : STD_LOGIC_VECTOR(Cluster_Num-1 downto 0); -- <- exponentiation_inst(i).valid_out 
     signal exp_valid_in     : STD_LOGIC_VECTOR(Cluster_Num-1 downto 0); -- <- exponentiation_inst(i).valid_in
     signal exp_ready_in     : STD_LOGIC_VECTOR(Cluster_Num-1 downto 0); -- <- exponentiation_inst(i).ready_in
     signal exp_ready_out    : STD_LOGIC_VECTOR(Cluster_Num-1 downto 0); -- <- exponentiation_inst(i).ready_out
     
-    signal counter_fifo_in : unsigned(log2c(Cluster_Num)-1 downto 0) := (others => '0');        
-    signal counter_fifo_in_next : unsigned(log2c(Cluster_Num)-1 downto 0) := (others => '0');        
-    signal counter_gen_out : unsigned(log2c(Cluster_Num)-1 downto 0) := (others => '0');
+    signal counter_fifo_in          : unsigned(log2c(Cluster_Num)-1 downto 0) := (others => '0'); -- points to the current available core         
+    signal counter_fifo_in_next     : unsigned(log2c(Cluster_Num)-1 downto 0) := (others => '0'); -- points to the next availabel core       
+    
+    signal counter_gen_out          : unsigned(log2c(Cluster_Num)-1 downto 0) := (others => '0'); -- points to the core with the current result
 
     signal is_last              : STD_LOGIC_VECTOR(Cluster_Num-1 downto 0) := (others => '0'); -- (i) is 1 if the i-th message is the last
     component exponentiation is
@@ -84,7 +85,7 @@ architecture bhv of core_cluster is
     end component;
     
 begin
-    
+    -- Instantiate the cores
     GENEREATE_CLUSTER : for i in Cluster_Num-1 downto 0 generate
         exponentiation_inst: exponentiation
          generic map(
@@ -104,8 +105,12 @@ begin
         );
 
     end generate;
-
-    
+    ----------------------------------------------------------------------------------------------
+    -- Synchronous process that manages the fifo_input, the ready_in and the last_msg_in ports. --
+    -- This process assign a message sequentially to each core whenever the core is available.  --
+    -- counter_fifo_in points to the current core, while counter_fifo_in_next to the successive,--
+    -- in order to obtain the rigth signal for the ready_in signal.                             --
+    ----------------------------------------------------------------------------------------------
     FILL_FIFO_IN_PROC : process (clk, reset_n)
     begin
         if(reset_n = '0') then
@@ -142,6 +147,13 @@ begin
         end if;
     end process;
 
+    ------------------------------------------------------------------------------------------------
+    -- Synchronous process that manages the exp_result, the valid_out and the last_msg_out ports. --
+    -- This process manages the results sequentially from each core whenever the core result is   --
+    -- valid.                                                                                     --
+    -- counter_gen_out points to the current core, while counter_fifo_in_next to the successive,  --
+    -- in order to obtain the rigth signal for the ready_in signal.                               --
+    ------------------------------------------------------------------------------------------------
     OUTPUT : process (clk, reset_n)
     begin
         if(reset_n = '0') then
